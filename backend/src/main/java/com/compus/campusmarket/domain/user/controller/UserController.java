@@ -2,6 +2,7 @@
 package com.compus.campusmarket.domain.user.controller;
 
 import com.compus.campusmarket.domain.user.dto.UserLoginRequest;
+import com.compus.campusmarket.domain.user.dto.UserProfileResponse;
 import com.compus.campusmarket.domain.user.dto.UserSignUpRequest;
 import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.service.UserService;
@@ -42,5 +43,20 @@ public class UserController {
             session.invalidate(); // 세션 무효화
         }
         return ResponseEntity.ok("로그아웃 되었습니다.");
+    }
+
+    // domain/user/controller/UserController.java 에 추가
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyProfile(HttpServletRequest request) {
+        HttpSession session = request.getSession(false); // 세션이 없으면 새로 생성하지 않음
+
+        if (session == null || session.getAttribute("loginUser") == null) {
+            return ResponseEntity.status(401).body("로그인이 필요한 서비스입니다.");
+        }
+
+        Long userId = (Long) session.getAttribute("loginUser");
+        UserProfileResponse profile = userService.getUserProfile(userId);
+
+        return ResponseEntity.ok(profile);
     }
 }
