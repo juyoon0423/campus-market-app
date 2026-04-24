@@ -45,18 +45,14 @@ public class UserController {
         return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 
-    // domain/user/controller/UserController.java 에 추가
+    // domain/user/controller/UserController.java 의 getMyProfile 메서드 수정
     @GetMapping("/me")
-    public ResponseEntity<?> getMyProfile(HttpServletRequest request) {
-        HttpSession session = request.getSession(false); // 세션이 없으면 새로 생성하지 않음
-
-        if (session == null || session.getAttribute("loginUser") == null) {
-            return ResponseEntity.status(401).body("로그인이 필요한 서비스입니다.");
-        }
-
+    public ResponseEntity<UserProfileResponse> getMyProfile(HttpServletRequest request) {
+        // 인터셉터가 이미 세션 체크를 마쳤으므로 바로 꺼내 쓰면 됩니다.
+        HttpSession session = request.getSession(false);
         Long userId = (Long) session.getAttribute("loginUser");
-        UserProfileResponse profile = userService.getUserProfile(userId);
 
+        UserProfileResponse profile = userService.getUserProfile(userId);
         return ResponseEntity.ok(profile);
     }
 }
