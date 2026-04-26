@@ -49,11 +49,10 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductListResponse> getAllProducts() {
-        return productRepository.findAllWithSeller().stream()
+        return productRepository.findAllWithSellerAndImages().stream()
                 .map(ProductListResponse::new)
                 .collect(Collectors.toList());
     }
-
     @Transactional(readOnly = true)
     public ProductDetailResponse getProductDetail(Long productId) {
         Product product = productRepository.findById(productId)

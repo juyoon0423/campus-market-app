@@ -7,7 +7,10 @@ import java.util.List;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    // N+1 문제 해결: seller를 페치 조인하여 한 번의 쿼리로 가져옴
-    @Query("select p from Product p join fetch p.seller order by p.createdAt desc")
-    List<Product> findAllWithSeller();
+    // seller와 images를 모두 페치 조인으로 한 번에 가져옴
+    @Query("select distinct p from Product p " +
+            "join fetch p.seller " +
+            "left join fetch p.images " + // 이미지가 없을 수도 있으므로 left join
+            "order by p.createdAt desc")
+    List<Product> findAllWithSellerAndImages();
 }
