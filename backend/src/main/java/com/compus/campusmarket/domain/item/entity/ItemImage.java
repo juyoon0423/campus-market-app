@@ -1,5 +1,5 @@
 package com.compus.campusmarket.domain.item.entity;
-import com.campusmarket.global.common.BaseTimeEntity;
+import com.compus.campusmarket.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

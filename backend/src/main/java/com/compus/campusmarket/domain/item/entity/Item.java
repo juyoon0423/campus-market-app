@@ -1,9 +1,9 @@
 package com.compus.campusmarket.domain.item.entity;
 
-import com.campusmarket.global.common.BaseTimeEntity;
 import com.compus.campusmarket.domain.category.entity.Category;
 import com.compus.campusmarket.domain.trade.entity.TradeLocation;
 import com.compus.campusmarket.domain.user.entity.User;
+import com.compus.campusmarket.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
