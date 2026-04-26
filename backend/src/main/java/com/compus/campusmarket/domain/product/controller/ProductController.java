@@ -1,6 +1,8 @@
 package com.compus.campusmarket.domain.product.controller;
 
 import com.compus.campusmarket.domain.product.dto.ProductCreateRequest;
+import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
+import com.compus.campusmarket.domain.product.dto.ProductListResponse;
 import com.compus.campusmarket.domain.product.service.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -42,5 +44,14 @@ public class ProductController {
         productService.createProduct(sellerId, requestDto, imageUrls);
 
         return ResponseEntity.ok("상품이 성공적으로 등록되었습니다.");
+    }
+    @GetMapping
+    public ResponseEntity<List<ProductListResponse>> getAllProducts() {
+        return ResponseEntity.ok(productService.getAllProducts());
+    }
+
+    @GetMapping("/{productId}")
+    public ResponseEntity<ProductDetailResponse> getProductDetail(@PathVariable Long productId) {
+        return ResponseEntity.ok(productService.getProductDetail(productId));
     }
 }

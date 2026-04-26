@@ -1,6 +1,8 @@
 package com.compus.campusmarket.domain.product.service;
 
 import com.compus.campusmarket.domain.product.dto.ProductCreateRequest;
+import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
+import com.compus.campusmarket.domain.product.dto.ProductListResponse;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductImage;
 import com.compus.campusmarket.domain.product.repository.ProductRepository;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -43,4 +46,20 @@ public class ProductService {
 
         return productRepository.save(product).getId();
     }
+
+    @Transactional(readOnly = true)
+    public List<ProductListResponse> getAllProducts() {
+        return productRepository.findAllWithSeller().stream()
+                .map(ProductListResponse::new)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ProductDetailResponse getProductDetail(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
+        return new ProductDetailResponse(product);
+    }
+
+
 }
