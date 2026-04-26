@@ -1,4 +1,3 @@
-// domain/trade/entity/TradeLocation.java
 package com.compus.campusmarket.domain.trade.entity;
 
 import com.campusmarket.global.common.BaseTimeEntity;

@@ -1,5 +1,4 @@
-// global/common/BaseTimeEntity.java
-package com.campusmarket.global.common;
+package com.compus.campusmarket.global.common;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

@@ -1,4 +1,3 @@
-// domain/user/repository/UserRepository.java
 package com.compus.campusmarket.domain.user.repository;
 
 import com.compus.campusmarket.domain.user.entity.User;

@@ -45,7 +45,6 @@ public class UserController {
         return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 
-    // domain/user/controller/UserController.java 의 getMyProfile 메서드 수정
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponse> getMyProfile(HttpServletRequest request) {
         // 인터셉터가 이미 세션 체크를 마쳤으므로 바로 꺼내 쓰면 됩니다.

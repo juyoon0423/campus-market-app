@@ -1,4 +1,3 @@
-// domain/item/entity/Item.java
 package com.compus.campusmarket.domain.item.entity;
 
 import com.campusmarket.global.common.BaseTimeEntity;

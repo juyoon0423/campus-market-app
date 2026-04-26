@@ -1,4 +1,3 @@
-// domain/user/service/UserService.java
 package com.compus.campusmarket.domain.user.service;
 
 import com.compus.campusmarket.domain.user.dto.UserProfileResponse;
@@ -46,7 +45,6 @@ public class UserService {
             throw new IllegalStateException("이미 등록된 학번입니다.");
         }
     }
-    // domain/user/service/UserService.java 에 추가
     public UserProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));

@@ -1,4 +1,3 @@
-// domain/user/dto/UserSignUpRequest.java
 package com.compus.campusmarket.domain.user.dto;
 
 import lombok.Getter;

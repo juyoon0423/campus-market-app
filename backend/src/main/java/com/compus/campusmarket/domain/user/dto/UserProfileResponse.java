@@ -1,4 +1,3 @@
-// domain/user/dto/UserProfileResponse.java
 package com.compus.campusmarket.domain.user.dto;
 
 import com.compus.campusmarket.domain.user.entity.User;

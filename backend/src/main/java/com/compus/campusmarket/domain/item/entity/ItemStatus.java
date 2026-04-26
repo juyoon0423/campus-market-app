@@ -1,6 +1,5 @@
 package com.compus.campusmarket.domain.item.entity;
 
-// domain/item/entity/ItemStatus.java
 public enum ItemStatus {
     SELLING("판매 중"),
     RESERVED("예약 중"),
