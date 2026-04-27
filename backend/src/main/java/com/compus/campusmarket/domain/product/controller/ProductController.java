@@ -3,6 +3,7 @@ package com.compus.campusmarket.domain.product.controller;
 import com.compus.campusmarket.domain.product.dto.ProductCreateRequest;
 import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
 import com.compus.campusmarket.domain.product.dto.ProductListResponse;
+import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
 import com.compus.campusmarket.domain.product.service.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -53,5 +54,30 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDetailResponse> getProductDetail(@PathVariable Long productId) {
         return ResponseEntity.ok(productService.getProductDetail(productId));
+    }
+
+    @PatchMapping("/{productId}")
+    public ResponseEntity<String> updateProduct(
+            @PathVariable Long productId,
+            @RequestBody ProductUpdateRequest updateRequest,
+            HttpServletRequest request) {
+
+        HttpSession session = request.getSession(false);
+        Long userId = (Long) session.getAttribute("loginUser");
+
+        productService.updateProduct(productId, userId, updateRequest);
+        return ResponseEntity.ok("상품 수정이 완료되었습니다.");
+    }
+
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<String> deleteProduct(
+            @PathVariable Long productId,
+            HttpServletRequest request) {
+
+        HttpSession session = request.getSession(false);
+        Long userId = (Long) session.getAttribute("loginUser");
+
+        productService.deleteProduct(productId, userId);
+        return ResponseEntity.ok("상품이 성공적으로 삭제되었습니다.");
     }
 }

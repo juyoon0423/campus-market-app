@@ -45,4 +45,17 @@ public class Product extends BaseTimeEntity {
         product.seller = seller;
         return product;
     }
+
+    public void update(String title, String description, Long price) {
+        this.title = title;
+        this.description = description;
+        this.price = price;
+    }
+
+    // 본인 확인 로직
+    public void validateSeller(Long userId) {
+        if (!this.seller.getId().equals(userId)) {
+            throw new IllegalStateException("해당 상품에 대한 권한이 없습니다.");
+        }
+    }
 }

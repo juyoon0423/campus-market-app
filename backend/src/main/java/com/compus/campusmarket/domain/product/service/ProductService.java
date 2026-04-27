@@ -3,6 +3,7 @@ package com.compus.campusmarket.domain.product.service;
 import com.compus.campusmarket.domain.product.dto.ProductCreateRequest;
 import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
 import com.compus.campusmarket.domain.product.dto.ProductListResponse;
+import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductImage;
 import com.compus.campusmarket.domain.product.repository.ProductRepository;
@@ -61,4 +62,26 @@ public class ProductService {
     }
 
 
+    @Transactional
+    public void updateProduct(Long productId, Long userId, ProductUpdateRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
+
+        // 본인 확인
+        product.validateSeller(userId);
+
+        // 수정 반영
+        product.update(request.getTitle(), request.getDescription(), request.getPrice());
+    }
+
+    @Transactional
+    public void deleteProduct(Long productId, Long userId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
+
+        // 본인 확인
+        product.validateSeller(userId);
+
+        productRepository.delete(product);
+    }
 }
