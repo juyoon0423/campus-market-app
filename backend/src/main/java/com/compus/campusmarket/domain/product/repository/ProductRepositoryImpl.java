@@ -46,4 +46,15 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     private BooleanExpression eqCategory(String category) {
         return StringUtils.hasText(category) ? product.category.eq(category) : null;
     }
+
+    @Override
+    public List<Product> findMyProducts(Long userId) {
+        return queryFactory
+                .selectFrom(product)
+                .leftJoin(product.seller).fetchJoin() // 판매자 정보
+                .leftJoin(product.images).fetchJoin() // 이미지 정보
+                .where(product.seller.id.eq(userId))  // 내 ID와 일치하는 것만
+                .orderBy(product.createdAt.desc())     // 최신순
+                .fetch();
+    }
 }

@@ -100,4 +100,11 @@ public class ProductService {
         product.changeStatus(status, userId);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductListResponse> getMyProducts(Long userId) {
+        return productRepository.findMyProducts(userId).stream()
+                .map(ProductListResponse::new)
+                .collect(Collectors.toList());
+    }
+
 }

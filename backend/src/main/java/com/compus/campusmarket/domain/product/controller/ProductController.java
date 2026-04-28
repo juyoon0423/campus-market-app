@@ -10,6 +10,7 @@ import com.compus.campusmarket.global.util.FileUploadUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -104,4 +105,18 @@ public class ProductController {
     }
 
 
+    @GetMapping("/me")
+    public ResponseEntity<List<ProductListResponse>> getMyProducts(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        // 인터셉터에서 이미 체크하지만, 안전하게 다시 확인
+        if (session == null || session.getAttribute("loginUser") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Long userId = (Long) session.getAttribute("loginUser");
+        List<ProductListResponse> myProducts = productService.getMyProducts(userId);
+
+        return ResponseEntity.ok(myProducts);
+    }
 }
