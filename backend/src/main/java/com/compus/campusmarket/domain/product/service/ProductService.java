@@ -6,6 +6,7 @@ import com.compus.campusmarket.domain.product.dto.ProductListResponse;
 import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductImage;
+import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.repository.ProductRepository;
 import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.repository.UserRepository;
@@ -86,11 +87,17 @@ public class ProductService {
         productRepository.delete(product);
     }
 
-    public List<ProductListResponse> search(String keyword, String category) {
-        return productRepository.searchProducts(keyword, category).stream()
+    public List<ProductListResponse> search(String keyword, String category, ProductStatus status) {
+        return productRepository.searchProducts(keyword, category, status).stream()
                 .map(ProductListResponse::new)
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public void updateStatus(Long productId, Long userId, ProductStatus status) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
+        product.changeStatus(status, userId);
+    }
 
 }

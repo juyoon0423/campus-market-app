@@ -4,6 +4,7 @@ import com.compus.campusmarket.domain.product.dto.ProductCreateRequest;
 import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
 import com.compus.campusmarket.domain.product.dto.ProductListResponse;
 import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
+import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.service.ProductService;
 import com.compus.campusmarket.global.util.FileUploadUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -84,8 +85,22 @@ public class ProductController {
     @GetMapping("/search")
     public ResponseEntity<List<ProductListResponse>> search(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String category) {
-        return ResponseEntity.ok(productService.search(keyword, category));
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) ProductStatus status) {
+        return ResponseEntity.ok(productService.search(keyword, category, status));
+    }
+
+    @PatchMapping("/{productId}/status")
+    public ResponseEntity<String> updateStatus(
+            @PathVariable Long productId,
+            @RequestParam ProductStatus status,
+            HttpServletRequest request) {
+
+        HttpSession session = request.getSession(false);
+        Long userId = (Long) session.getAttribute("loginUser");
+
+        productService.updateStatus(productId, userId, status);
+        return ResponseEntity.ok("상품 상태가 " + status.getDescription() + "(으)로 변경되었습니다.");
     }
 
 

@@ -65,4 +65,9 @@ public class Product extends BaseTimeEntity {
             throw new IllegalStateException("해당 상품에 대한 권한이 없습니다.");
         }
     }
+
+    public void changeStatus(ProductStatus newStatus, Long userId) {
+        validateSeller(userId); // 본인 확인
+        this.status = newStatus;
+    }
 }

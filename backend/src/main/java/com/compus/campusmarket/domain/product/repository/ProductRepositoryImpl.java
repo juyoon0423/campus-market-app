@@ -1,6 +1,7 @@
 package com.compus.campusmarket.domain.product.repository;
 
 import com.compus.campusmarket.domain.product.entity.Product;
+import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.entity.QProduct;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -17,14 +18,15 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Product> searchProducts(String keyword, String category) {
+    public List<Product> searchProducts(String keyword, String category, ProductStatus status) {
         return queryFactory
                 .selectFrom(product)
-                .leftJoin(product.seller).fetchJoin() // N+1 방지
-                .leftJoin(product.images).fetchJoin() // N+1 방지
+                .leftJoin(product.seller).fetchJoin()
+                .leftJoin(product.images).fetchJoin()
                 .where(
                         containKeyword(keyword),
-                        eqCategory(category)
+                        eqCategory(category),
+                        eqStatus(status) // 상태 필터 추가
                 )
                 .orderBy(product.createdAt.desc())
                 .fetch();
@@ -34,6 +36,10 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     private BooleanExpression containKeyword(String keyword) {
         return StringUtils.hasText(keyword) ?
                 product.title.contains(keyword).or(product.description.contains(keyword)) : null;
+    }
+
+    private BooleanExpression eqStatus(ProductStatus status) {
+        return status != null ? product.status.eq(status) : null;
     }
 
     // 카테고리 일치 조건 (엔티티에 category 필드가 있다는 가정 하에)
