@@ -80,4 +80,13 @@ public class ProductController {
         productService.deleteProduct(productId, userId);
         return ResponseEntity.ok("상품이 성공적으로 삭제되었습니다.");
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductListResponse>> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category) {
+        return ResponseEntity.ok(productService.search(keyword, category));
+    }
+
+
 }

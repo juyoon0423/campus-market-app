@@ -26,6 +26,10 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private Long price;
 
+    // 카테고리 필드 추가
+    @Column(nullable = false)
+    private String category;
+
     @Enumerated(EnumType.STRING)
     private ProductStatus status = ProductStatus.SELLING;
 
@@ -36,20 +40,23 @@ public class Product extends BaseTimeEntity {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images = new ArrayList<>();
 
-    // 생성 메서드
-    public static Product create(String title, String description, Long price, User seller) {
+    // 생성 메서드 수정 (category 파라미터 추가)
+    public static Product create(String title, String description, Long price, User seller, String category) {
         Product product = new Product();
         product.title = title;
         product.description = description;
         product.price = price;
         product.seller = seller;
+        product.category = category; // 추가
         return product;
     }
 
-    public void update(String title, String description, Long price) {
+    // 수정 메서드 수정 (category 포함 가능)
+    public void update(String title, String description, Long price, String category) {
         this.title = title;
         this.description = description;
         this.price = price;
+        this.category = category; // 추가
     }
 
     // 본인 확인 로직

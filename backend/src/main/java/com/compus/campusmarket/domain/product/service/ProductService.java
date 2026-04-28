@@ -35,7 +35,8 @@ public class ProductService {
                 request.getTitle(),
                 request.getDescription(),
                 request.getPrice(),
-                seller
+                seller,
+                request.getCategory()
         );
 
         // 3. 이미지 정보 추가
@@ -71,7 +72,7 @@ public class ProductService {
         product.validateSeller(userId);
 
         // 수정 반영
-        product.update(request.getTitle(), request.getDescription(), request.getPrice());
+        product.update(request.getTitle(), request.getDescription(), request.getPrice(), request.getCategory());
     }
 
     @Transactional
@@ -84,4 +85,12 @@ public class ProductService {
 
         productRepository.delete(product);
     }
+
+    public List<ProductListResponse> search(String keyword, String category) {
+        return productRepository.searchProducts(keyword, category).stream()
+                .map(ProductListResponse::new)
+                .collect(Collectors.toList());
+    }
+
+
 }
