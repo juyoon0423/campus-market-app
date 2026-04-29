@@ -1,9 +1,11 @@
 "use client";
 
+import { setOnUnauthorized } from "@/src/lib/api";
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -11,6 +13,7 @@ import {
 type AuthContextValue = {
   token: string | null;
   isLoggedIn: boolean;
+  isHydrated: boolean;
   login: (nextToken: string) => void;
   logout: () => void;
 };
@@ -22,13 +25,15 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
+  const [token, setToken] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-    return localStorage.getItem("token");
-  });
+  // Initialize token from localStorage after hydration
+  useEffect(() => {
+    const savedToken = localStorage.getItem("token");
+    setToken(savedToken);
+    setIsHydrated(true);
+  }, []);
 
   const login = useCallback((nextToken: string) => {
     localStorage.setItem("token", nextToken);
@@ -40,14 +45,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setToken(null);
   }, []);
 
+  // Set up the unauthorized callback
+  useEffect(() => {
+    setOnUnauthorized(logout);
+  }, [logout]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       token,
       isLoggedIn: Boolean(token),
+      isHydrated,
       login,
       logout,
     }),
-    [token, login, logout],
+    [token, isHydrated, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

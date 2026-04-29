@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from "react";
 import { createProduct } from "@/src/lib/apis/productApi";
+import { useAuth } from "@/src/context/AuthContext";
+import { AxiosError } from "axios";
 
 export default function UploadPage() {
   const router = useRouter();
+  const { isLoggedIn, isHydrated } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -15,6 +18,13 @@ export default function UploadPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Redirect to login if not authenticated (after hydration)
+  useEffect(() => {
+    if (isHydrated && !isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [isLoggedIn, isHydrated, router]);
 
   const imageNames = useMemo(() => images.map((file) => file.name), [images]);
 
@@ -54,12 +64,32 @@ export default function UploadPage() {
       setCategory("");
       setImages([]);
       router.push("/");
-    } catch {
-      setErrorMessage("상품 등록에 실패했습니다. 입력값을 확인해주세요.");
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 401) {
+          setErrorMessage("인증이 만료되었습니다. 다시 로그인해주세요.");
+          router.replace("/login");
+        } else if (error.response?.status === 400) {
+          setErrorMessage("입력값을 확인해주세요.");
+        } else {
+          setErrorMessage("상품 등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        }
+      } else {
+        setErrorMessage("상품 등록에 실패했습니다.");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Show nothing until hydration is complete
+  if (!isHydrated) {
+    return null;
+  }
+
+  if (!isLoggedIn) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-10">
@@ -84,7 +114,8 @@ export default function UploadPage() {
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 disabled:bg-slate-50"
             />
           </div>
 
@@ -100,8 +131,9 @@ export default function UploadPage() {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               required
+              disabled={isSubmitting}
               rows={5}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 disabled:bg-slate-50"
             />
           </div>
 
@@ -117,7 +149,8 @@ export default function UploadPage() {
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
                 required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                disabled={isSubmitting}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 disabled:bg-slate-50"
               />
             </div>
 
@@ -133,7 +166,8 @@ export default function UploadPage() {
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
                 required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                disabled={isSubmitting}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 disabled:bg-slate-50"
               />
             </div>
           </div>
@@ -148,8 +182,42 @@ export default function UploadPage() {
               multiple
               accept="image/*"
               onChange={handleImageChange}
-              className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-700"
+              disabled={isSubmitting}
+              className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-700 disabled:bg-slate-50"
             />
+            {imageNames.length > 0 ? (
+              <ul className="mt-2 space-y-1 text-xs text-slate-500">
+                {imageNames.map((name) => (
+                  <li key={name}>{name}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+
+          {errorMessage ? (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          {successMessage ? (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              {successMessage}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+          >
+            {isSubmitting ? "등록 중..." : "상품 등록하기"}
+          </button>
+        </form>
+      </main>
+    </div>
+  );
+}
             {imageNames.length > 0 ? (
               <ul className="mt-2 space-y-1 text-xs text-slate-500">
                 {imageNames.map((name) => (

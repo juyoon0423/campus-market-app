@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { signUp } from "@/src/lib/apis/userApi";
+import { AxiosError } from "axios";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -25,8 +26,16 @@ export default function SignUpPage() {
     try {
       await signUp(form);
       router.push("/login");
-    } catch {
-      setErrorMessage("회원가입에 실패했습니다. 입력값을 다시 확인해주세요.");
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 400) {
+          setErrorMessage("입력값을 확인해주세요. 이메일이 이미 등록되어 있을 수 있습니다.");
+        } else {
+          setErrorMessage("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        }
+      } else {
+        setErrorMessage("회원가입에 실패했습니다.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -53,7 +62,8 @@ export default function SignUpPage() {
                 setForm((prev) => ({ ...prev, email: event.target.value }))
               }
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
             />
           </div>
 
@@ -68,7 +78,8 @@ export default function SignUpPage() {
                 setForm((prev) => ({ ...prev, name: event.target.value }))
               }
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
             />
           </div>
 
@@ -86,7 +97,8 @@ export default function SignUpPage() {
                 setForm((prev) => ({ ...prev, studentId: event.target.value }))
               }
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
             />
           </div>
 
@@ -104,7 +116,8 @@ export default function SignUpPage() {
                 setForm((prev) => ({ ...prev, department: event.target.value }))
               }
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
             />
           </div>
 
@@ -123,7 +136,8 @@ export default function SignUpPage() {
                 setForm((prev) => ({ ...prev, password: event.target.value }))
               }
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
             />
           </div>
 

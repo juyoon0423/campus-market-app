@@ -23,7 +23,7 @@ function getImageUrl(representativeImageUrl?: string | null) {
 
 export default function HomePage() {
   const router = useRouter();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, isHydrated, logout } = useAuth();
   const [products, setProducts] = useState<ProductListResponse[]>([]);
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("");
@@ -99,7 +99,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isLoggedIn ? (
+            {isHydrated && isLoggedIn ? (
               <>
                 <Link
                   href="/upload"

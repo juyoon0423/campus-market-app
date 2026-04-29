@@ -4,10 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
+import { useUser } from "@/src/hooks/useUser";
 import { getMyProducts } from "@/src/lib/apis/productApi";
-import { getMyProfile } from "@/src/lib/apis/userApi";
 import type { ProductListResponse } from "@/src/types/product";
-import type { UserProfileResponse } from "@/src/types/user";
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -19,44 +18,53 @@ function formatDate(value: string) {
 
 export default function MyPage() {
   const router = useRouter();
-  const { isLoggedIn, logout } = useAuth();
-  const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  const { isLoggedIn, isHydrated, logout } = useAuth();
+  const { user, isLoading: userLoading, error: userError } = useUser();
   const [products, setProducts] = useState<ProductListResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState("");
 
+  // Redirect to login if not authenticated (after hydration)
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (isHydrated && !isLoggedIn) {
       router.replace("/login");
       return;
     }
 
-    const fetchMyPageData = async () => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    const fetchMyProducts = async () => {
       try {
-        const [profileResponse, productsResponse] = await Promise.all([
-          getMyProfile(),
-          getMyProducts(),
-        ]);
-        setProfile(profileResponse);
+        const productsResponse = await getMyProducts();
         setProducts(productsResponse);
       } catch {
-        setErrorMessage("마이페이지 정보를 불러오지 못했습니다.");
+        setProductsError("내 상품 정보를 불러오지 못했습니다.");
       } finally {
-        setIsLoading(false);
+        setProductsLoading(false);
       }
     };
 
-    fetchMyPageData();
-  }, [isLoggedIn, router]);
+    fetchMyProducts();
+  }, [isLoggedIn, isHydrated, router]);
 
   const handleLogout = () => {
     logout();
     router.push("/login");
   };
 
+  // Show nothing until hydration is complete
+  if (!isHydrated) {
+    return null;
+  }
+
   if (!isLoggedIn) {
     return null;
   }
+
+  const isLoading = userLoading || productsLoading;
+  const errorMessage = userError?.message || productsError;
 
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-10">
@@ -94,30 +102,30 @@ export default function MyPage() {
           </section>
         ) : null}
 
-        {!isLoading && !errorMessage && profile ? (
+        {!isLoading && !errorMessage && user ? (
           <>
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-900">내 정보</h2>
               <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
                 <div>
                   <dt className="text-slate-500">이름</dt>
-                  <dd className="mt-1 font-medium">{profile.name}</dd>
+                  <dd className="mt-1 font-medium">{user.name}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">학번</dt>
-                  <dd className="mt-1 font-medium">{profile.studentId}</dd>
+                  <dd className="mt-1 font-medium">{user.studentId}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">학과</dt>
-                  <dd className="mt-1 font-medium">{profile.department}</dd>
+                  <dd className="mt-1 font-medium">{user.department}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">신뢰도</dt>
-                  <dd className="mt-1 font-medium">{profile.trustScore}</dd>
+                  <dd className="mt-1 font-medium">{user.trustScore}</dd>
                 </div>
                 <div className="sm:col-span-2">
                   <dt className="text-slate-500">가입일</dt>
-                  <dd className="mt-1 font-medium">{formatDate(profile.createdAt)}</dd>
+                  <dd className="mt-1 font-medium">{formatDate(user.createdAt)}</dd>
                 </div>
               </dl>
             </section>
