@@ -218,36 +218,3 @@ export default function UploadPage() {
     </div>
   );
 }
-            {imageNames.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-xs text-slate-500">
-                {imageNames.map((name) => (
-                  <li key={name}>{name}</li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-
-          {errorMessage ? (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-              {errorMessage}
-            </p>
-          ) : null}
-
-          {successMessage ? (
-            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              {successMessage}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            {isSubmitting ? "등록 중..." : "상품 등록하기"}
-          </button>
-        </form>
-      </main>
-    </div>
-  );
-}

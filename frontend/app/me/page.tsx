@@ -78,6 +78,12 @@ export default function MyPage() {
             >
               메인으로
             </Link>
+            <Link
+              href="/chat"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              채팅
+            </Link>
             <button
               type="button"
               onClick={handleLogout}

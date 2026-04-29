@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/src/context/AuthContext";
 import { getProduct } from "@/src/lib/apis/productApi";
 import type { ProductDetailResponse } from "@/src/types/product";
 
@@ -26,6 +27,7 @@ export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const productId = Number(params.id);
   const isInvalidProductId = Number.isNaN(productId);
+  const { isLoggedIn, isHydrated } = useAuth();
   const [product, setProduct] = useState<ProductDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -104,6 +106,14 @@ export default function ProductDetailPage() {
         >
           목록으로 돌아가기
         </Link>
+        {isHydrated ? (
+          <Link
+            href={isLoggedIn ? `/chat?productId=${productId}` : "/login"}
+            className="ml-2 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
+          >
+            채팅 문의하기
+          </Link>
+        ) : null}
 
         <h1 className="mt-5 text-2xl font-bold text-slate-900">{product.title}</h1>
         <p className="mt-2 text-sm text-slate-500">판매자: {product.sellerName}</p>

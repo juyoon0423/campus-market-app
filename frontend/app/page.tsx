@@ -113,6 +113,12 @@ export default function HomePage() {
                 >
                   마이페이지
                 </Link>
+                <Link
+                  href="/chat"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  채팅
+                </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
