@@ -84,5 +84,21 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 npm run dev
 ```
 
-## 🔗 관련 링크
-[![Backend Repository](https://img.shields.io/badge/Backend-GitHub-green?style=flat-square&logo=github)](https://github.com/juyoon0423/campus-market-backend)
+---
+
+## 🔗 Related Links
+
+본 프론트엔드와 연동되어 데이터 처리를 담당하는 **백엔드(Spring Boot)** 소스코드 레포지토리입니다.
+
+| 프로젝트 | 레포지토리 링크 | 기술 스택 |
+| :--- | :--- | :--- |
+| **Campus Market Backend** | [![Backend Repo](https://img.shields.io/badge/Backend-GitHub-green?style=flat-square&logo=github)](https://github.com/juyoon0423/campus-market-backend) | `Java`, `Spring Boot`, `MySQL` |
+
+---
+
+<p align="center">
+  <b>백엔드 서버 가동 후 프론트엔드 개발 서버를 실행해야 정상적인 데이터 연동이 가능합니다.</b>
+</p>
+
+---
+© 2026 Campus Market Project. Developed by juyoon0423.
