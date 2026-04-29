@@ -65,6 +65,16 @@
 - **문제:** 보안상의 이유로 `localhost:8080` 리소스를 차단하는 Next.js 이미지 최적화 정책.
 - **해결:** `next.config.mjs`에 `remotePatterns` 설정을 추가하여 특정 백엔드 도메인의 이미지 리소스를 허용하도록 설정하였습니다.
 
+### 4️⃣ 비동기 렌더링 시 roomId 유효성 검증 및 API 호출 최적화
+- **문제**: Next.js App Router의 `useParams()`가 초기 렌더링 시 빈 객체를 반환하면서, 채팅방 ID가 `NaN` 또는 `undefined`로 백엔드에 전달되어 API 호출 에러(`MethodArgumentTypeMismatchException`)가 발생하는 이슈.
+- **해결**: 
+  - **입구 컷(Guard Logic)**: `useEffect` 내에서 `roomId`의 존재 여부와 숫자 타입을 검증하는 조건을 강화하여 유효한 데이터가 확보된 시점에만 WebSocket 연결 및 데이터 로딩이 시작되도록 로직을 개선하였습니다.
+  - **연결 자동화**: `useChat` 커스텀 훅을 설계하여 `roomId` 변화를 감지하고, 방 이동 시 기존 WebSocket 세션을 자동으로 해제(Cleanup)한 뒤 새 연결을 맺도록 라이프사이클을 관리하였습니다.
+
+### 5️⃣ WebSocket 순환 참조로 인한 JSON 파싱 에러 대응
+- **문제**: 백엔드 엔티티의 양방향 연관관계로 인해 채팅 메시지 수신 시 프론트엔드에서 `JSON.parse` 에러가 발생하거나 브라우저 메모리가 급증하는 현상.
+- **해결**: 백엔드와 협업하여 순환 참조를 제거한 **`ChatMessageResponse` DTO** 규격을 정의하였습니다. 데이터 구조를 단순화함으로써 클라이언트 사이드에서의 파싱 속도를 향상시키고 불필요한 메모리 점유를 방지하였습니다.
+- 
 ---
 
 ## 🚀 Getting Started
