@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 "/api/products", // [추가] 전체 상품 조회는 누구나 가능하도록
                                 "/images/**",
                                 "/favicon.ico",
-                                "/error"
+                                "/error",
+                                "/ws-stomp/**"
                         ).permitAll() // 위에 나열된 경로는 인증 없이 허용
                         .anyRequest().authenticated() // 그 외 모든 요청은 JWT 인증 필요
                 )
