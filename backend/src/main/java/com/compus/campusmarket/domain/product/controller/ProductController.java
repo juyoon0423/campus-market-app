@@ -3,10 +3,11 @@ package com.compus.campusmarket.domain.product.controller;
 import com.compus.campusmarket.domain.product.dto.*;
 import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.service.ProductService;
+import com.compus.campusmarket.global.config.auth.CustomUserDetails;
 import com.compus.campusmarket.global.util.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication; // 필수 import
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,15 +23,15 @@ public class ProductController {
     private final ProductService productService;
     private final FileUploadUtil fileUploadUtil;
 
-    // 상품 등록 (세션 제거, Authentication 추가)
+    // 상품 등록
     @PostMapping
     public ResponseEntity<String> createProduct(
             @RequestPart("data") ProductCreateRequest requestDto,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
-            Authentication authentication) throws IOException {
+            @AuthenticationPrincipal CustomUserDetails userDetails) throws IOException {
 
-        // JwtAuthenticationFilter에서 저장한 userId 꺼내기
-        Long sellerId = (Long) authentication.getPrincipal();
+        // CustomUserDetails에서 안전하게 ID 추출
+        Long sellerId = userDetails.getUserId();
 
         List<String> imageUrls = new ArrayList<>();
         if (images != null) {
@@ -49,10 +50,9 @@ public class ProductController {
     public ResponseEntity<String> updateProduct(
             @PathVariable Long productId,
             @RequestBody ProductUpdateRequest updateRequest,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Long userId = (Long) authentication.getPrincipal();
-        productService.updateProduct(productId, userId, updateRequest);
+        productService.updateProduct(productId, userDetails.getUserId(), updateRequest);
         return ResponseEntity.ok("상품 수정 완료");
     }
 
@@ -60,21 +60,20 @@ public class ProductController {
     @DeleteMapping("/{productId}")
     public ResponseEntity<String> deleteProduct(
             @PathVariable Long productId,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Long userId = (Long) authentication.getPrincipal();
-        productService.deleteProduct(productId, userId);
+        productService.deleteProduct(productId, userDetails.getUserId());
         return ResponseEntity.ok("상품 삭제 완료");
     }
 
     // 내 상품 조회
     @GetMapping("/me")
-    public ResponseEntity<List<ProductListResponse>> getMyProducts(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
-        return ResponseEntity.ok(productService.getMyProducts(userId));
+    public ResponseEntity<List<ProductListResponse>> getMyProducts(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(productService.getMyProducts(userDetails.getUserId()));
     }
 
-    // (기본 조회 기능들은 그대로 유지)
+    // 전체 조회 (인증 불필요 - SecurityConfig에서 permitAll 설정됨)
     @GetMapping
     public ResponseEntity<List<ProductListResponse>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());

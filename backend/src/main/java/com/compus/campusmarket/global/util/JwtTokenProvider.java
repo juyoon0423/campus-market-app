@@ -1,20 +1,25 @@
 package com.compus.campusmarket.global.util;
 
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import com.compus.campusmarket.global.config.auth.CustomUserDetailsService;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey; // 확인 필수
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
-    // 보안을 위해 최소 32자 이상의 임의 문자열을 사용하세요.
+
+    private final CustomUserDetailsService userDetailsService;
     private final String secretString = "your-very-secret-key-at-least-32-characters-long-campus-market!!";
     private final SecretKey key = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
-
     private final long expirationTime = 3600000; // 1시간
 
     public String createToken(Long userId) {
@@ -27,17 +32,20 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    // [중요] 실무형: Authentication 객체 직접 생성
+    public Authentication getAuthentication(String token) {
+        Long userId = this.getUserIdFromToken(token);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userId));
+        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    }
+
     public Long getUserIdFromToken(String token) {
-        try {
-            return Long.parseLong(Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload()
-                    .getSubject());
-        } catch (Exception e) {
-            return null;
-        }
+        return Long.parseLong(Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject());
     }
 
     public boolean validateToken(String token) {
@@ -45,7 +53,6 @@ public class JwtTokenProvider {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            // 토큰이 유효하지 않거나 만료된 경우
             return false;
         }
     }

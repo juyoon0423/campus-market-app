@@ -3,10 +3,11 @@ package com.compus.campusmarket.domain.user.controller;
 import com.compus.campusmarket.domain.user.dto.*;
 import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.service.UserService;
+import com.compus.campusmarket.global.config.auth.CustomUserDetails;
 import com.compus.campusmarket.global.util.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication; // 필수 import
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -34,22 +35,17 @@ public class UserController {
         String token = jwtTokenProvider.createToken(loginUser.getId());
 
         Map<String, String> response = new HashMap<>();
-        response.put("token", token); // 프론트엔드에서 이 토큰을 저장해야 함
+        response.put("token", token);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserProfileResponse> getMyProfile(Authentication authentication) {
-        // [수정] 세션 어노테이션을 버리고 Authentication을 사용
-        if (authentication == null) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<UserProfileResponse> getMyProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Long userId = (Long) authentication.getPrincipal();
-        UserProfileResponse profile = userService.getUserProfile(userId);
+        // SecurityConfig에서 인증되지 않은 사용자는 401을 반환하므로
+        // 여기까지 들어왔다면 userDetails는 null이 아닙니다.
+        UserProfileResponse profile = userService.getUserProfile(userDetails.getUserId());
         return ResponseEntity.ok(profile);
     }
-
-    // JWT 방식에서는 로그아웃을 프론트엔드에서 토큰을 삭제하는 것으로 처리하므로
-    // 서버측 로그아웃 엔드포인트는 보통 필요 없거나 블랙리스트 처리를 합니다.
 }
