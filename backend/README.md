@@ -59,6 +59,15 @@
 - **문제:** 인증되지 않은 사용자가 보호된 자원에 접근 시 시큐리티 기본 설정에 의해 모호한 403 Forbidden 에러가 반환됨.
 - **해결:** `AuthenticationEntryPoint`를 커스텀 구현하여 인증 실패 시 명확한 **401 Unauthorized** 상태 코드와 커스텀 에러 메시지를 반환하도록 개선하였습니다.
 
+### 4️⃣ WebSocket 순환 참조 및 JSON 직렬화 오류 해결
+- **문제**: 채팅 메시지 조회 시 엔티티(`ChatMessage` ↔ `ChatRoom`) 간의 양방향 연관관계로 인해 JSON 변환 과정에서 무한 루프가 발생, `HttpMessageNotWritableException (Max nesting depth 500+ exceed)` 에러와 함께 서버가 다운되는 현상 발생.
+- **해결**: 엔티티를 API 응답으로 직접 노출하지 않고, 필요한 필드(메시지, 송신자ID, 생성시간 등)만 포함하는 **`ChatMessageResponse` DTO**를 구축하였습니다. 스트림 API를 활용하여 엔티티 리스트를 DTO 리스트로 변환하여 반환함으로써 데이터 크기를 줄이고 순환 참조 문제를 원천 차단하였습니다.
+
+### 5️⃣ STOMP 기반 실시간 채팅의 동기화 및 입력 이슈 처리
+- **문제**: 한글 입력(IME) 환경에서 엔터 키 입력 시 메시지가 중복 전송되는 현상 및 초기 `roomId` 로딩 시점 차이로 인한 `NaN` 파라미터 전달 에러 발생.
+- **해결**:
+  - **FE**: `isComposing` 상태 체크 로직을 도입하여 한글 조합 중 발생하는 중복 이벤트를 방지하였습니다.
+  - **BE**: `roomId` 파싱 시 유효성 검증 로직을 강화하고, 서비스 레이어에서 `createOrGetRoom` 로직을 통해 방 생성과 조회를 원자적(Atomic)으로 처리하여 클라이언트 요청 시 중복 방 생성을 방지하였습니다.
 ---
 
 ## ⚙️ Configuration & Installation
