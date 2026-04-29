@@ -1,64 +1,229 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/src/context/AuthContext";
+import { getAllProducts, searchProducts } from "@/src/lib/apis/productApi";
+import type { ProductListResponse } from "@/src/types/product";
+
+const FALLBACK_IMAGE_URL = "/window.svg";
+
+function getImageUrl(representativeImageUrl?: string | null) {
+  if (!representativeImageUrl) {
+    return FALLBACK_IMAGE_URL;
+  }
+
+  if (representativeImageUrl.startsWith("http")) {
+    return representativeImageUrl;
+  }
+
+  return `http://localhost:8080/images/${representativeImageUrl}`;
+}
+
+export default function HomePage() {
+  const router = useRouter();
+  const { isLoggedIn, logout } = useAuth();
+  const [products, setProducts] = useState<ProductListResponse[]>([]);
+  const [keyword, setKeyword] = useState("");
+  const [category, setCategory] = useState("");
+  const [status, setStatus] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await getAllProducts();
+        setProducts(response);
+      } catch {
+        setErrorMessage("상품 목록을 불러오지 못했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const handleSearch = async () => {
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const result = await searchProducts({
+        keyword: keyword || undefined,
+        category: category || undefined,
+        status: status || undefined,
+      });
+      setProducts(result);
+    } catch {
+      setErrorMessage("검색 중 문제가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setKeyword("");
+    setCategory("");
+    setStatus("");
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const result = await getAllProducts();
+      setProducts(result);
+    } catch {
+      setErrorMessage("상품 목록을 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen bg-gray-50 px-4 py-8 md:py-10">
+      <main className="mx-auto w-full max-w-6xl">
+        <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              캠퍼스 마켓
+            </h1>
+            <p className="mt-2 text-sm text-slate-500">
+              원하는 상품을 검색하고 상세 정보를 확인해보세요.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href="/upload"
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                >
+                  상품 등록
+                </Link>
+                <Link
+                  href="/me"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  마이페이지
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                >
+                  로그아웃
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  로그인
+                </Link>
+                <Link
+                  href="/signup"
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                >
+                  회원가입
+                </Link>
+              </>
+            )}
+          </div>
+        </header>
+
+        <section className="mb-8 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:p-5">
+          <div className="grid gap-3 md:grid-cols-4">
+            <input
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              placeholder="검색어"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+            <input
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              placeholder="카테고리"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
+            />
+            <input
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              placeholder="상태 (예: SALE)"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleSearch}
+                className="flex-1 rounded-xl bg-[#ff8a3d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#ff7a25]"
+              >
+                검색
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                초기화
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {errorMessage ? (
+          <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            {errorMessage}
+          </p>
+        ) : null}
+
+        {isLoading ? (
+          <p className="text-sm text-slate-600">상품을 불러오는 중...</p>
+        ) : (
+          <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((product) => {
+              const imageUrl = getImageUrl(product.representativeImageUrl);
+
+              return (
+                <Link
+                  key={product.id}
+                  href={`/products/${product.id}`}
+                  className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <div className="h-48 w-full overflow-hidden rounded-2xl bg-slate-200">
+                    <div
+                      className="h-full w-full bg-cover bg-center"
+                      style={{ backgroundImage: `url(${imageUrl})` }}
+                    />
+                  </div>
+                  <div className="space-y-2 p-4">
+                    <h2 className="line-clamp-1 text-[15px] font-semibold text-slate-900">
+                      {product.title}
+                    </h2>
+                    <p className="text-sm text-slate-500 before:mr-1 before:content-['👤']">
+                      {product.sellerName}
+                    </p>
+                    <p className="pt-1 text-2xl font-extrabold tracking-tight text-slate-900">
+                      ₩ {product.price.toLocaleString()}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </section>
+        )}
+
+        {!isLoading && products.length === 0 ? (
+          <p className="mt-6 text-sm text-slate-600">검색 결과가 없습니다.</p>
+        ) : null}
       </main>
     </div>
   );
