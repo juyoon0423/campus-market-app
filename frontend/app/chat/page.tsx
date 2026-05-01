@@ -106,6 +106,7 @@ export default function ChatPage() {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [fallbackSenderId, setFallbackSenderId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isCreatingChatRoom, setIsCreatingChatRoom] = useState(false);
   const stompClientRef = useRef<Client | null>(null);
   const roomSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
   const pendingSubscribeRoomIdRef = useRef<number | null>(null);
@@ -294,6 +295,12 @@ export default function ChatPage() {
       }
 
       if (hasProductIdQuery) {
+        // Prevent duplicate room creation
+        if (isCreatingChatRoom) {
+          return;
+        }
+
+        setIsCreatingChatRoom(true);
         try {
           const room = await createOrGetChatRoom(productIdFromQuery);
           setSelectedRoomId(room.id);
@@ -319,12 +326,14 @@ export default function ChatPage() {
           } catch {
             setErrorMessage("채팅방 생성에 실패했습니다.");
           }
+        } finally {
+          setIsCreatingChatRoom(false);
         }
       }
     };
 
     openRequestedRoom();
-  }, [hasProductIdQuery, hasRoomIdQuery, isLoggedIn, productIdFromQuery, roomIdFromQuery]);
+  }, [hasProductIdQuery, hasRoomIdQuery, isLoggedIn, productIdFromQuery, roomIdFromQuery, isCreatingChatRoom]);
 
   useEffect(() => {
     if (selectedRoomId === null) {
@@ -519,7 +528,8 @@ export default function ChatPage() {
                 value={inputMessage}
                 onChange={(event) => setInputMessage(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
+                  // IME (한글 입력) 조합 중에는 메시지 전송을 하지 않도록 처리
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
                     event.preventDefault();
                     handleSendMessage();
                   }

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import { getProduct } from "@/src/lib/apis/productApi";
+import { createOrGetChatRoom } from "@/src/lib/apis/chatApi";
 import type { ProductDetailResponse } from "@/src/types/product";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
@@ -25,12 +26,14 @@ function getImageUrl(imageUrls?: string[] | null) {
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const productId = Number(params.id);
   const isInvalidProductId = Number.isNaN(productId);
   const { isLoggedIn, isHydrated } = useAuth();
   const [product, setProduct] = useState<ProductDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   useEffect(() => {
     if (isInvalidProductId) {
@@ -50,6 +53,21 @@ export default function ProductDetailPage() {
 
     fetchProduct();
   }, [productId, isInvalidProductId]);
+
+  const handleInitiateChat = async () => {
+    if (!isLoggedIn || isChatLoading) {
+      return;
+    }
+
+    setIsChatLoading(true);
+    try {
+      const room = await createOrGetChatRoom(productId);
+      router.push(`/chat?roomId=${room.id}`);
+    } catch {
+      alert("채팅방을 생성할 수 없습니다.");
+      setIsChatLoading(false);
+    }
+  };
 
   if (isInvalidProductId) {
     return (
@@ -107,12 +125,23 @@ export default function ProductDetailPage() {
           목록으로 돌아가기
         </Link>
         {isHydrated ? (
-          <Link
-            href={isLoggedIn ? `/chat?productId=${productId}` : "/login"}
-            className="ml-2 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
-          >
-            채팅 문의하기
-          </Link>
+          isLoggedIn ? (
+            <button
+              type="button"
+              onClick={handleInitiateChat}
+              disabled={isChatLoading}
+              className="ml-2 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isChatLoading ? "채팅방 생성 중..." : "채팅 문의하기"}
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="ml-2 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
+            >
+              채팅 문의하기
+            </Link>
+          )
         ) : null}
 
         <h1 className="mt-5 text-2xl font-bold text-slate-900">{product.title}</h1>
