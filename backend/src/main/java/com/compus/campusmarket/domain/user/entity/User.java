@@ -1,6 +1,5 @@
 package com.compus.campusmarket.domain.user.entity;
 
-import com.compus.campusmarket.domain.item.entity.Item;
 import com.compus.campusmarket.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,9 +39,6 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)         // DB에 문자열로 저장 (ACTIVE/INACTIVE/BANNED)
     @Column(nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
-
-    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Item> items = new ArrayList<>();
 
     // 정적 팩토리 메서드: new User() 대신 User.create()로 의미 명확하게
     public static User create(String email, String name, String studentId,

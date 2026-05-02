@@ -2,7 +2,6 @@ package com.compus.campusmarket.domain.product.controller;
 
 import com.compus.campusmarket.domain.product.dto.*;
 import com.compus.campusmarket.domain.product.entity.ProductStatus;
-import com.compus.campusmarket.domain.product.review.dto.StatusUpdateRequest;
 import com.compus.campusmarket.domain.product.service.ProductService;
 import com.compus.campusmarket.global.config.auth.CustomUserDetails;
 import com.compus.campusmarket.global.util.FileUploadUtil;

@@ -56,13 +56,11 @@ public class ProductService {
                 .map(ProductListResponse::new)
                 .collect(Collectors.toList());
     }
-    @Transactional(readOnly = true)
     public ProductDetailResponse getProductDetail(Long productId) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdWithSeller(productId)  // 수정!
                 .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
         return new ProductDetailResponse(product);
     }
-
 
     @Transactional
     public void updateProduct(Long productId, Long userId, ProductUpdateRequest request) {
