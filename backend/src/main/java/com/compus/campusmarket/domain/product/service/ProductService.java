@@ -107,4 +107,23 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    // ProductService.java 내부에 추가
+
+    @Transactional
+    public void completeTrade(Long productId, Long sellerId, Long buyerId) {
+        // 1. 상품 조회
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
+
+        // 2. 판매자 권한 확인 (본인의 상품인지)
+        product.validateSeller(sellerId);
+
+        // 3. 구매자 정보 조회
+        User buyer = userRepository.findById(buyerId)
+                .orElseThrow(() -> new IllegalArgumentException("구매자 정보가 올바르지 않습니다."));
+
+        // 4. 거래 완료 처리 (상태 변경 및 구매자 세팅)
+        product.completeTrade(buyer, sellerId);
+    }
+
 }

@@ -12,25 +12,31 @@ import java.util.List;
 @Table(name = "trade_location")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TradeLocation extends BaseTimeEntity {
+public class TradeLocation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String landmark;             // 랜드마크 이름 (예: 도서관 앞, 학생회관)
+    @Column(nullable = false)
+    private String address;       // 도로명 주소 또는 지번 주소
 
-    @Column(length = 200)
-    private String description;          // 상세 설명
+    @Column(nullable = false)
+    private Double latitude;      // 위도 (예: 37.123456)
 
-    @OneToMany(mappedBy = "tradeLocation")
-    private List<Item> items = new ArrayList<>();
+    @Column(nullable = false)
+    private Double longitude;     // 경도 (예: 127.123456)
 
-    public static TradeLocation create(String landmark, String description) {
-        TradeLocation location = new TradeLocation();
-        location.landmark = landmark;
-        location.description = description;
-        return location;
+    private String landmark;      // 사용자가 지정한 장소 명칭 (예: 미래관 앞)
+
+    private String description;   // 상세 설명 (예: 1층 자판기 옆에서 만나요)
+
+    @Builder
+    public TradeLocation(String address, Double latitude, Double longitude, String landmark, String description) {
+        this.address = address;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.landmark = landmark;
+        this.description = description;
     }
 }

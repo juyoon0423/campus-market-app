@@ -37,6 +37,10 @@ public class Product extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User seller;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "buyer_id")
+    private User buyer; // 구매자 추가
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images = new ArrayList<>();
 
@@ -70,4 +74,12 @@ public class Product extends BaseTimeEntity {
         validateSeller(userId); // 본인 확인
         this.status = newStatus;
     }
+
+    public void completeTrade(User buyer, Long userId) {
+        validateSeller(userId);
+        this.status = ProductStatus.SOLD_OUT;
+        this.buyer = buyer;
+    }
+
+
 }

@@ -2,6 +2,7 @@ package com.compus.campusmarket.domain.product.controller;
 
 import com.compus.campusmarket.domain.product.dto.*;
 import com.compus.campusmarket.domain.product.entity.ProductStatus;
+import com.compus.campusmarket.domain.product.review.dto.StatusUpdateRequest;
 import com.compus.campusmarket.domain.product.service.ProductService;
 import com.compus.campusmarket.global.config.auth.CustomUserDetails;
 import com.compus.campusmarket.global.util.FileUploadUtil;
@@ -90,5 +91,21 @@ public class ProductController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) ProductStatus status) {
         return ResponseEntity.ok(productService.search(keyword, category, status));
+    }
+
+    // ProductController.java에 추가
+    @PatchMapping("/{productId}/status")
+    public ResponseEntity<String> updateStatus(
+            @PathVariable Long productId,
+            @RequestBody StatusUpdateRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        if (request.getStatus() == ProductStatus.SOLD_OUT) {
+            // 판매 완료 시에는 구매자 ID가 필요함
+            productService.completeTrade(productId, userDetails.getUserId(), request.getBuyerId());
+        } else {
+            productService.updateStatus(productId, userDetails.getUserId(), request.getStatus());
+        }
+        return ResponseEntity.ok("상태 변경 완료");
     }
 }

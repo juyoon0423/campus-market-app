@@ -41,6 +41,7 @@ public class SecurityConfig {
                                 "/api/products/search",
                                 "/api/products", // [추가] 전체 상품 조회는 누구나 가능하도록
                                 "/images/**",
+                                "/api/products/{productId}", // [수정] 상품 상세 조회는 누구나 가능
                                 "/favicon.ico",
                                 "/error",
                                 "/ws-stomp/**"

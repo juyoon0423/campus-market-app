@@ -21,12 +21,13 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     public List<Product> searchProducts(String keyword, String category, ProductStatus status) {
         return queryFactory
                 .selectFrom(product)
+                .distinct() // OneToMany 페치 조인 시 중복 데이터 제거
                 .leftJoin(product.seller).fetchJoin()
                 .leftJoin(product.images).fetchJoin()
                 .where(
                         containKeyword(keyword),
                         eqCategory(category),
-                        eqStatus(status) // 상태 필터 추가
+                        eqStatus(status)
                 )
                 .orderBy(product.createdAt.desc())
                 .fetch();
@@ -39,6 +40,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     }
 
     private BooleanExpression eqStatus(ProductStatus status) {
+        // status가 null이거나 유효하지 않은 값이 들어오는 경우를 대비
         return status != null ? product.status.eq(status) : null;
     }
 

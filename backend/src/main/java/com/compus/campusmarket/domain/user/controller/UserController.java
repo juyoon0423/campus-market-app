@@ -48,4 +48,10 @@ public class UserController {
         UserProfileResponse profile = userService.getUserProfile(userDetails.getUserId());
         return ResponseEntity.ok(profile);
     }
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable Long userId) {
+        // UserService에 이미 구현된 getUserProfile을 호출합니다.
+        UserProfileResponse profile = userService.getUserProfile(userId);
+        return ResponseEntity.ok(profile);
+    }
 }
