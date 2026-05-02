@@ -20,6 +20,7 @@ export type ProductListResponse = {
   price: number;
   sellerName: string;
   representativeImageUrl?: string | null;
+  status: ProductStatus;
 };
 
 export type ProductDetailResponse = {

@@ -13,11 +13,13 @@ function normalizeChatRoomResponse(value: unknown): ChatRoomResponse | null {
   }
 
   const idCandidate = value.id ?? value.roomId;
+  const buyerIdCandidate = value.buyerId;
   const opponentCandidate = value.opponentName ?? value.opponentNickname;
   const productName = value.productName;
 
   if (
     typeof idCandidate !== "number" ||
+    typeof buyerIdCandidate !== "number" ||
     typeof opponentCandidate !== "string" ||
     typeof productName !== "string"
   ) {
@@ -31,6 +33,7 @@ function normalizeChatRoomResponse(value: unknown): ChatRoomResponse | null {
 
   return {
     id: idCandidate,
+    buyerId: buyerIdCandidate,
     opponentName: opponentCandidate,
     productName,
     lastMessage,
@@ -66,4 +69,10 @@ export async function getChatRoomMessages(roomId: number): Promise<ChatMessageRe
   }
 
   return response.data as ChatMessageResponse[];
+}
+
+// 특정 상품의 채팅방 목록을 가져오는 함수
+export async function getProductChatRooms(productId: number): Promise<ChatRoomResponse[]> {
+  const response = await api.get(`/api/chat/rooms/product/${productId}`);
+  return response.data;
 }

@@ -1,5 +1,6 @@
 export type ChatRoomResponse = {
   id: number;
+  buyerId: number;
   opponentName: string;
   productName: string;
   lastMessage?: string | null;

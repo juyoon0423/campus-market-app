@@ -254,9 +254,22 @@ export default function HomePage() {
                     <p className="text-sm text-slate-500 before:mr-1 before:content-['👤']">
                       {product.sellerName}
                     </p>
-                    <p className="pt-1 text-2xl font-extrabold tracking-tight text-slate-900">
-                      ₩ {product.price.toLocaleString()}
-                    </p>
+                    <div className="flex items-center justify-between pt-1">
+                      <p className="text-2xl font-extrabold tracking-tight text-slate-900">
+                        ₩ {product.price.toLocaleString()}
+                      </p>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        product.status === "SELLING" 
+                          ? "bg-green-100 text-green-800"
+                          : product.status === "RESERVED"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {product.status === "SELLING" && "판매중"}
+                        {product.status === "RESERVED" && "예약중"}
+                        {product.status === "SOLD_OUT" && "판매완료"}
+                      </span>
+                    </div>
                   </div>
                 </Link>
               );

@@ -101,15 +101,15 @@ export default function SellerProfile({ sellerId, sellerName }: SellerProfilePro
   // 로그인하지 않은 경우
   if (!isLoggedIn) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center space-x-3">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <div className="flex items-center space-x-2">
           <div className="text-gray-400">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-700">{sellerName} 판매자</p>
+            <p className="text-xs font-medium text-gray-700">{sellerName} 판매자</p>
             <p className="text-xs text-gray-500">로그인 후 신뢰 지수를 확인하세요</p>
           </div>
         </div>
@@ -120,12 +120,12 @@ export default function SellerProfile({ sellerId, sellerName }: SellerProfilePro
   // 로딩 상태
   if (loading) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center space-x-3">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <div className="flex items-center space-x-2">
           <div className="animate-spin">
-            <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full" />
+            <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full" />
           </div>
-          <p className="text-sm text-gray-600">판매자 정보 로딩 중...</p>
+          <p className="text-xs text-gray-600">판매자 정보 로딩 중...</p>
         </div>
       </div>
     );
@@ -134,15 +134,15 @@ export default function SellerProfile({ sellerId, sellerName }: SellerProfilePro
   // 에러 상태
   if (error || !sellerProfile) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center space-x-3">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <div className="flex items-center space-x-2">
           <div className="text-gray-400">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-700">{sellerName} 판매자</p>
+            <p className="text-xs font-medium text-gray-700">{sellerName} 판매자</p>
             <p className="text-xs text-gray-500">
               {error || "판매자 정보를 불러올 수 없습니다."}
             </p>
@@ -154,23 +154,23 @@ export default function SellerProfile({ sellerId, sellerName }: SellerProfilePro
 
   // 정상 상태 - 판매자 정보 표시
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{sellerProfile.name} 판매자</h3>
-          <p className="text-sm text-gray-600">{sellerProfile.department}</p>
+          <h3 className="text-sm font-semibold text-gray-900">{sellerProfile.name} 판매자</h3>
+          <p className="text-xs text-gray-600">{sellerProfile.department}</p>
         </div>
-        <div className="text-3xl">
+        <div className="text-2xl">
           {getTrustScoreEmoji(sellerProfile.trustScore)}
         </div>
       </div>
 
       {/* 신뢰 지수 온도계 */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">신뢰 지수</span>
-          <div className="flex items-center space-x-2">
-            <span className={`text-2xl font-bold ${getTrustScoreTextColor(sellerProfile.trustScore)}`}>
+          <span className="text-xs font-medium text-gray-700">신뢰 지수</span>
+          <div className="flex items-center space-x-1">
+            <span className={`text-lg font-bold ${getTrustScoreTextColor(sellerProfile.trustScore)}`}>
               {formatTrustScore(sellerProfile.trustScore)}°C
             </span>
             <span className={`text-xs font-medium ${getTrustScoreTextColor(sellerProfile.trustScore)}`}>
@@ -181,7 +181,7 @@ export default function SellerProfile({ sellerId, sellerName }: SellerProfilePro
 
         {/* 온도계 프로그레스 바 */}
         <div className="relative">
-          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
             <div
               className={`h-full transition-all duration-500 ease-out ${getTrustScoreColor(sellerProfile.trustScore)}`}
               style={{ width: `${Math.min((sellerProfile.trustScore / 5.0) * 100, 100)}%` }}
@@ -190,11 +190,11 @@ export default function SellerProfile({ sellerId, sellerName }: SellerProfilePro
           
           {/* 온도계 눈금 */}
           <div className="absolute inset-0 flex items-center justify-between px-1">
-            <div className="w-1 h-2 bg-white opacity-50 rounded" />
-            <div className="w-1 h-2 bg-white opacity-50 rounded" />
-            <div className="w-1 h-2 bg-white opacity-50 rounded" />
-            <div className="w-1 h-2 bg-white opacity-50 rounded" />
-            <div className="w-1 h-2 bg-white opacity-50 rounded" />
+            <div className="w-0.5 h-1.5 bg-white opacity-50 rounded" />
+            <div className="w-0.5 h-1.5 bg-white opacity-50 rounded" />
+            <div className="w-0.5 h-1.5 bg-white opacity-50 rounded" />
+            <div className="w-0.5 h-1.5 bg-white opacity-50 rounded" />
+            <div className="w-0.5 h-1.5 bg-white opacity-50 rounded" />
           </div>
         </div>
 
@@ -207,10 +207,10 @@ export default function SellerProfile({ sellerId, sellerName }: SellerProfilePro
         </div>
 
         {/* 신뢰도 설명 */}
-        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-start space-x-2">
+        <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+          <div className="flex items-start space-x-1">
             <div className="text-xs text-gray-500 mt-0.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>

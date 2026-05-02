@@ -5,8 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import { getProduct } from "@/src/lib/apis/productApi";
-import { createOrGetChatRoom } from "@/src/lib/apis/chatApi";
+import { createOrGetChatRoom, getProductChatRooms } from "@/src/lib/apis/chatApi";
 import type { ProductDetailResponse, ProductStatus } from "@/src/types/product";
+import type { ChatRoomResponse } from "@/src/types/chat";
 import SellerProfile from "@/src/components/SellerProfile";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
@@ -41,6 +42,8 @@ export default function ProductDetailPage() {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isSoldOutModalOpen, setIsSoldOutModalOpen] = useState(false);
   const [buyerId, setBuyerId] = useState("");
+  const [chatRooms, setChatRooms] = useState<ChatRoomResponse[]>([]);
+  const [isLoadingChatRooms, setIsLoadingChatRooms] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
@@ -195,6 +198,20 @@ export default function ProductDetailPage() {
     router.push(`/products/${product.id}/edit`);
   };
 
+  const loadChatRooms = async () => {
+    if (!product) return;
+    
+    setIsLoadingChatRooms(true);
+    try {
+      const rooms = await getProductChatRooms(productId);
+      setChatRooms(rooms);
+    } catch (error) {
+      console.error("Failed to load chat rooms:", error);
+    } finally {
+      setIsLoadingChatRooms(false);
+    }
+  };
+
   const handleDeleteProduct = async () => {
     if (!product || !product.id) {
       setDeleteError("상품 정보가 없습니다.");
@@ -313,71 +330,75 @@ export default function ProductDetailPage() {
               
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
-                  <button
-                    onClick={handleEditProduct}
-                    className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                  >
-                    상품 내용 수정하기
-                  </button>
-                  <div className="relative">
-                    <button
-                      onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                      disabled={isStatusUpdating}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
-                    >
-                      <span>{isStatusUpdating ? "상태 변경 중..." : "상품 상태 변경하기"}</span>
-                      <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                    
-                    {isStatusDropdownOpen && (
-                      <div className="absolute left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                  {/* 판매완료 상품이 아닌 경우에만 수정 및 상태 변경 표시 */}
+                  {product?.status !== "SOLD_OUT" && (
+                    <>
+                      <button
+                        onClick={handleEditProduct}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        상품 내용 수정하기
+                      </button>
+                      <div className="relative">
                         <button
-                          onClick={() => {
-                            handleStatusChange("SELLING");
-                            setIsStatusDropdownOpen(false);
-                          }}
-                          disabled={isStatusUpdating || product?.status === "SELLING"}
-                          className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                            product?.status === "SELLING" 
-                              ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
-                              : "text-slate-700 hover:bg-slate-50"
-                          }`}
+                          onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                          disabled={isStatusUpdating}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
                         >
-                          판매중 {product?.status === "SELLING" && "(현재)"}
+                          <span>{isStatusUpdating ? "상태 변경 중..." : "상품 상태 변경하기"}</span>
+                          <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
                         </button>
-                        <button
-                          onClick={() => {
-                            handleStatusChange("RESERVED");
-                            setIsStatusDropdownOpen(false);
-                          }}
-                          disabled={isStatusUpdating || product?.status === "RESERVED"}
-                          className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                            product?.status === "RESERVED" 
-                              ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
-                              : "text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          예약중 {product?.status === "RESERVED" && "(현재)"}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsSoldOutModalOpen(true);
-                            setIsStatusDropdownOpen(false);
-                          }}
-                          disabled={isStatusUpdating || product?.status === "SOLD_OUT"}
-                          className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                            product?.status === "SOLD_OUT" 
-                              ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
-                              : "text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          판매완료 {product?.status === "SOLD_OUT" && "(현재)"}
-                        </button>
+                        
+                        {isStatusDropdownOpen && (
+                          <div className="absolute left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                            <button
+                              onClick={() => {
+                                handleStatusChange("SELLING");
+                                setIsStatusDropdownOpen(false);
+                              }}
+                              disabled={isStatusUpdating || product?.status === "SELLING"}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                product?.status === "SELLING" 
+                                  ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              판매중 {product?.status === "SELLING" && "(현재)"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleStatusChange("RESERVED");
+                                setIsStatusDropdownOpen(false);
+                              }}
+                              disabled={isStatusUpdating || product?.status === "RESERVED"}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                product?.status === "RESERVED" 
+                                  ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              예약중 {product?.status === "RESERVED" && "(현재)"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsSoldOutModalOpen(true);
+                                setIsStatusDropdownOpen(false);
+                                loadChatRooms();
+                              }}
+                              disabled={isStatusUpdating}
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              판매완료
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </>
+                  )}
+                  
+                  {/* 상품 삭제는 항상 표시 */}
                   <button
                     onClick={handleDeleteProduct}
                     disabled={isDeleting}
@@ -404,14 +425,36 @@ export default function ProductDetailPage() {
         <div className="mt-4">
           <SellerProfile sellerId={product?.sellerId || 0} sellerName={product?.sellerName || ""} />
         </div>
-        <p className="mt-4 text-2xl font-bold text-slate-900">
-          {product.price.toLocaleString()}원
-        </p>
+        
+        {/* 가격과 상태 표시 */}
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-2xl font-bold text-slate-900">
+            {product.price.toLocaleString()}원
+          </p>
+          <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${
+            product?.status === "SELLING" 
+              ? "bg-green-100 text-green-800"
+              : product?.status === "RESERVED"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-gray-100 text-gray-800"
+          }`}>
+            {product?.status === "SELLING" && "판매중"}
+            {product?.status === "RESERVED" && "예약중"}
+            {product?.status === "SOLD_OUT" && "판매완료"}
+          </span>
+        </div>
         <p className="mt-6 whitespace-pre-wrap text-slate-700">
           {product.description}
         </p>
 
-        {/* 채팅 문의하기 버튼 (판매자가 아닌 경우) */}
+        <section className="mt-8">
+          <div
+            className="h-72 rounded-xl bg-slate-200 bg-cover bg-center"
+            style={{ backgroundImage: `url(${getImageUrl(product.imageUrls)})` }}
+          />
+        </section>
+
+        {/* 채팅 문의하기 버튼 (판매자가 아닌 경우) - 맨 하단으로 이동 */}
         {isHydrated && (
           isLoggedIn ? (
             !isSeller && (
@@ -433,29 +476,40 @@ export default function ProductDetailPage() {
             </Link>
           )
         )}
-
-        <section className="mt-8">
-          <div
-            className="h-72 rounded-xl bg-slate-200 bg-cover bg-center"
-            style={{ backgroundImage: `url(${getImageUrl(product.imageUrls)})` }}
-          />
-        </section>
       </main>
       {/* SOLD_OUT 모달 */}
       {isSoldOutModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">판매완료 처리</h3>
-            <p className="text-sm text-slate-600 mb-4">구매자의 ID를 입력해주세요.</p>
+            <p className="text-sm text-slate-600 mb-4">채팅을 나눈 구매자를 선택해주세요.</p>
             
-            <input
-              type="number"
-              value={buyerId}
-              onChange={(e) => setBuyerId(e.target.value)}
-              placeholder="구매자 ID"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={isStatusUpdating}
-            />
+            {isLoadingChatRooms ? (
+              <div className="text-center py-4">
+                <div className="text-sm text-slate-500">채팅 목록을 불러오는 중...</div>
+              </div>
+            ) : chatRooms.length === 0 ? (
+              <div className="text-center py-4">
+                <div className="text-sm text-slate-500">채팅을 나눈 구매자가 없습니다.</div>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {chatRooms.map((room) => (
+                  <button
+                    key={room.id}
+                    onClick={() => {
+                      setBuyerId(room.buyerId.toString());
+                      handleStatusChange("SOLD_OUT", room.buyerId);
+                    }}
+                    disabled={isStatusUpdating}
+                    className="w-full text-left px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="font-medium text-slate-900">{room.opponentName}</div>
+                    <div className="text-xs text-slate-500">{room.lastMessage || "메시지 없음"}</div>
+                  </button>
+                ))}
+              </div>
+            )}
             
             {statusError && (
               <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -469,24 +523,12 @@ export default function ProductDetailPage() {
                   setIsSoldOutModalOpen(false);
                   setBuyerId("");
                   setStatusError("");
+                  setChatRooms([]);
                 }}
                 disabled={isStatusUpdating}
                 className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 취소
-              </button>
-              <button
-                onClick={() => {
-                  if (!buyerId.trim()) {
-                    setStatusError("구매자 ID를 입력해주세요.");
-                    return;
-                  }
-                  handleStatusChange("SOLD_OUT", Number(buyerId));
-                }}
-                disabled={isStatusUpdating}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isStatusUpdating ? "처리 중..." : "판매완료"}
               </button>
             </div>
           </div>
