@@ -52,10 +52,11 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductListResponse> getAllProducts() {
-        return productRepository.findAllWithSellerAndImages().stream()
+        return productRepository.findActiveProducts().stream() // ✅ 활성 상품만 조회
                 .map(ProductListResponse::new)
                 .collect(Collectors.toList());
     }
+
     public ProductDetailResponse getProductDetail(Long productId) {
         Product product = productRepository.findByIdWithSeller(productId)  // 수정!
                 .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));

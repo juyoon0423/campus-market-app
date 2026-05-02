@@ -28,7 +28,8 @@ public class ChatRoomController {
 
         Long currentUserId = userDetails.getUserId();
         ChatRoom room = chatService.createOrGetRoom(productId, currentUserId);
-        return ResponseEntity.ok(new ChatRoomResponse(room, currentUserId));
+        String lastMessage = chatService.getLastMessage(room.getId());
+        return ResponseEntity.ok(new ChatRoomResponse(room, currentUserId, lastMessage));
     }
 
     // 내 채팅방 리스트 조회
@@ -37,10 +38,15 @@ public class ChatRoomController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long currentUserId = userDetails.getUserId();
-        List<ChatRoomResponse> responses = chatService.findAllRooms(currentUserId)
-                .stream()
-                .map(room -> new ChatRoomResponse(room, currentUserId))
+        List<ChatRoom> rooms = chatService.findAllRooms(currentUserId);
+
+        List<ChatRoomResponse> responses = rooms.stream()
+                .map(room -> {
+                    String lastMessage = chatService.getLastMessage(room.getId());
+                    return new ChatRoomResponse(room, currentUserId, lastMessage);
+                })
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(responses);
     }
 
@@ -51,6 +57,25 @@ public class ChatRoomController {
                 .stream()
                 .map(ChatMessageResponse::new)
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
+    }
+
+    // 특정 상품의 채팅방 목록 조회
+    @GetMapping("/rooms/product/{productId}")
+    public ResponseEntity<List<ChatRoomResponse>> getProductRooms(
+            @PathVariable Long productId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long currentUserId = userDetails.getUserId();
+        List<ChatRoom> rooms = chatService.findRoomsByProductId(productId, currentUserId);
+
+        List<ChatRoomResponse> responses = rooms.stream()
+                .map(room -> {
+                    String lastMessage = chatService.getLastMessage(room.getId());
+                    return new ChatRoomResponse(room, currentUserId, lastMessage);
+                })
+                .collect(Collectors.toList());
+
         return ResponseEntity.ok(responses);
     }
 }

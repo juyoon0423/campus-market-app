@@ -33,6 +33,19 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                 .fetch();
     }
 
+    // ✅ 활성 상품 조회 메서드 추가 (판매중 + 예약중)
+    @Override
+    public List<Product> findActiveProducts() {
+        return queryFactory
+                .selectFrom(product)
+                .distinct()
+                .leftJoin(product.seller).fetchJoin()
+                .leftJoin(product.images).fetchJoin()
+                .where(product.status.in(ProductStatus.SELLING, ProductStatus.RESERVED)) // ✅ 활성 상태만
+                .orderBy(product.createdAt.desc())
+                .fetch();
+    }
+
     // 제목 또는 내용에 키워드 포함 조건
     private BooleanExpression containKeyword(String keyword) {
         return StringUtils.hasText(keyword) ?
