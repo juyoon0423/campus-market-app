@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
     return config;
   }
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
 
   if (token) {
     config.headers.set("Authorization", `Bearer ${token}`);
@@ -33,7 +33,7 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
         if (onUnauthorizedCallback) {
           onUnauthorizedCallback();
         }

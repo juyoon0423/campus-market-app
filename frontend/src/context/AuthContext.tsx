@@ -30,18 +30,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize token from localStorage after hydration
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
+    const savedToken = localStorage.getItem("accessToken");
     setToken(savedToken);
     setIsHydrated(true);
   }, []);
 
   const login = useCallback((nextToken: string) => {
-    localStorage.setItem("token", nextToken);
+    localStorage.setItem("accessToken", nextToken);
     setToken(nextToken);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
     setToken(null);
   }, []);
 

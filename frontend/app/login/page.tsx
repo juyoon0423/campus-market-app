@@ -41,6 +41,12 @@ export default function LoginPage() {
     }
   };
 
+  // 🗺️ 카카오 OAuth2 로그인
+  const handleKakaoLogin = () => {
+    const kakaoAuthUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/oauth2/authorization/kakao`;
+    window.location.href = kakaoAuthUrl;
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
       <main className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
@@ -96,6 +102,16 @@ export default function LoginPage() {
             {isSubmitting ? "로그인 중..." : "로그인"}
           </button>
         </form>
+
+        {/* 🗺️ 카카오 로그인 버튼 */}
+        <div className="mt-4">
+          <button
+            onClick={handleKakaoLogin}
+            className="w-full rounded-lg bg-[#FEE500] px-4 py-2.5 text-sm font-medium text-black transition hover:bg-[#E5D400] active:bg-[#D4BC00]"
+          >
+            카카오로 시작하기
+          </button>
+        </div>
 
         <p className="mt-6 text-center text-sm text-slate-600">
           계정이 없으신가요?{" "}
