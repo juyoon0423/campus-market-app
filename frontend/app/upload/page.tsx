@@ -161,14 +161,20 @@ export default function UploadPage() {
               >
                 카테고리
               </label>
-              <input
+              <select
                 id="category"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
                 required
                 disabled={isSubmitting}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 disabled:bg-slate-50"
-              />
+              >
+                <option value="">카테고리를 선택하세요</option>
+                <option value="학업 관련">학업 관련</option>
+                <option value="디지털/가전">디지털/가전</option>
+                <option value="생활/자취">생활/자취</option>
+                <option value="기타">기타</option>
+              </select>
             </div>
           </div>
 

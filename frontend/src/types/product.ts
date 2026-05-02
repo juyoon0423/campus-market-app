@@ -27,8 +27,10 @@ export type ProductDetailResponse = {
   title: string;
   description: string;
   price: number;
+  category: string;
   sellerName: string;
   sellerId: number;
   sellerTrustScore: number;
+  status: ProductStatus;
   imageUrls?: string[] | null;
 };
