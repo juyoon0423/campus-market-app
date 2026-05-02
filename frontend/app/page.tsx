@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import { getAllProducts, searchProducts } from "@/src/lib/apis/productApi";
-import type { ProductListResponse } from "@/src/types/product";
+import type { ProductListResponse, ProductStatus } from "@/src/types/product";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
 
@@ -27,7 +27,7 @@ export default function HomePage() {
   const [products, setProducts] = useState<ProductListResponse[]>([]);
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<ProductStatus | "">("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -147,40 +147,77 @@ export default function HomePage() {
         </header>
 
         <section className="mb-8 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:p-5">
-          <div className="grid gap-3 md:grid-cols-4">
-            <input
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              placeholder="검색어"
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
-            />
-            <input
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              placeholder="카테고리"
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
-            />
-            <input
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-              placeholder="상태 (예: SALE)"
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
-            />
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleSearch}
-                className="flex-1 rounded-xl bg-[#ff8a3d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#ff7a25]"
+          <div className="space-y-4">
+            {/* 검색창 */}
+            <div className="relative">
+              <input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="검색어를 입력하세요"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pl-10 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
+              />
+              <svg
+                className="absolute left-3 top-3.5 h-4 w-4 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                검색
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                초기화
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            
+            {/* 필터 */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex-1">
+                <label className="mb-1 block text-xs font-medium text-slate-600">카테고리</label>
+                <select
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
+                >
+                  <option value="">전체 카테고리</option>
+                  <option value="학업 관련">학업 관련</option>
+                  <option value="디지털/가전">디지털/가전</option>
+                  <option value="생활/자취">생활/자취</option>
+                  <option value="기타">기타</option>
+                </select>
+              </div>
+              
+              <div className="flex-1">
+                <label className="mb-1 block text-xs font-medium text-slate-600">상태</label>
+                <select
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value as ProductStatus | "")}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
+                >
+                  <option value="">전체 상태</option>
+                  <option value="SELLING">판매중</option>
+                  <option value="RESERVED">예약중</option>
+                  <option value="SOLD_OUT">판매완료</option>
+                </select>
+              </div>
+              
+              <div className="flex gap-2 sm:mt-6">
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  className="flex-1 rounded-xl bg-[#ff8a3d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#ff7a25] sm:flex-initial"
+                >
+                  검색
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  초기화
+                </button>
+              </div>
             </div>
           </div>
         </section>

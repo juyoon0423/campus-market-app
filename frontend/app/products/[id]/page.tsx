@@ -7,6 +7,7 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getProduct } from "@/src/lib/apis/productApi";
 import { createOrGetChatRoom } from "@/src/lib/apis/chatApi";
 import type { ProductDetailResponse } from "@/src/types/product";
+import SellerProfile from "@/src/components/SellerProfile";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
 
@@ -145,10 +146,11 @@ export default function ProductDetailPage() {
         ) : null}
 
         <h1 className="mt-5 text-2xl font-bold text-slate-900">{product.title}</h1>
-        <p className="mt-2 text-sm text-slate-500">판매자: {product.sellerName}</p>
-        <p className="mt-1 text-sm text-slate-500">
-          판매자 신뢰도: {product.sellerTrustScore}
-        </p>
+        
+        {/* 판매자 프로필 컴포넌트 */}
+        <div className="mt-4">
+          <SellerProfile sellerId={product?.sellerId || 0} sellerName={product?.sellerName || ""} />
+        </div>
         <p className="mt-4 text-2xl font-bold text-slate-900">
           {product.price.toLocaleString()}원
         </p>

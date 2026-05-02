@@ -1,4 +1,4 @@
-export type ProductStatus = string;
+export type ProductStatus = "SELLING" | "RESERVED" | "SOLD_OUT";
 
 export type ProductCreateRequest = {
   title: string;
@@ -23,10 +23,12 @@ export type ProductListResponse = {
 };
 
 export type ProductDetailResponse = {
+  id: number;
   title: string;
   description: string;
   price: number;
   sellerName: string;
+  sellerId: number;
   sellerTrustScore: number;
   imageUrls?: string[] | null;
 };
