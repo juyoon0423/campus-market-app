@@ -43,6 +43,12 @@ public class Product extends BaseTimeEntity {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images = new ArrayList<>();
 
+    @Column(nullable = false)
+    private int viewCount = 0;
+
+    @Column(nullable = false)
+    private int likeCount = 0;
+
     // 생성
     public static Product create(String title, String description, Long price, User seller, String category) {
         Product product = new Product();
@@ -77,5 +83,18 @@ public class Product extends BaseTimeEntity {
         validateSeller(userId);
         this.status = ProductStatus.SOLD_OUT;
         this.buyer = buyer;
+    }
+
+    // --- 비즈니스 로직 추가 ---
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        this.likeCount--;
     }
 }

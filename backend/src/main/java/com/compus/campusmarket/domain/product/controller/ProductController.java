@@ -76,30 +76,46 @@ public class ProductController {
         return ResponseEntity.ok("상품 삭제 완료");
     }
 
-    // 내 상품 조회
+    // 내 상품 조회 (본인 상품이므로 좋아요는 무조건 false지만, 생성자 구색을 맞추기 위해)
     @GetMapping("/me")
     public ResponseEntity<List<ProductListResponse>> getMyProducts(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(productService.getMyProducts(userDetails.getUserId()));
     }
 
-    // 전체 조회 (인증 불필요 - SecurityConfig에서 permitAll 설정됨)
+    // 내가 찜한 상품 조회 (관심 목록)
+    @GetMapping("/me/likes")
+    public ResponseEntity<List<ProductListResponse>> getLikedProducts(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(productService.getLikedProducts(userDetails.getUserId()));
+    }
+
+    // 전체 조회
     @GetMapping
-    public ResponseEntity<List<ProductListResponse>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<List<ProductListResponse>> getAllProducts(
+            @AuthenticationPrincipal CustomUserDetails userDetails) { // ✅ 추가
+        Long viewerId = (userDetails != null) ? userDetails.getUserId() : null;
+        return ResponseEntity.ok(productService.getAllProducts(viewerId));
     }
 
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductDetailResponse> getProduct(@PathVariable("productId") Long productId) {
-        return ResponseEntity.ok(productService.getProductDetail(productId));
+    public ResponseEntity<ProductDetailResponse> getProduct(
+            @PathVariable("productId") Long productId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long viewerId = (userDetails != null) ? userDetails.getUserId() : null;
+        return ResponseEntity.ok(productService.getProductDetail(productId, viewerId));
     }
 
+    // 검색
     @GetMapping("/search")
     public ResponseEntity<List<ProductListResponse>> search(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) ProductStatus status) {
-        return ResponseEntity.ok(productService.search(keyword, category, status));
+            @RequestParam(required = false) ProductStatus status,
+            @AuthenticationPrincipal CustomUserDetails userDetails) { // ✅ 추가
+        Long viewerId = (userDetails != null) ? userDetails.getUserId() : null;
+        return ResponseEntity.ok(productService.search(keyword, category, status, viewerId));
     }
 
     @PatchMapping("/{productId}/status")
@@ -115,5 +131,15 @@ public class ProductController {
             productService.updateStatus(productId, userDetails.getUserId(), request.getStatus());
         }
         return ResponseEntity.ok("상태 변경 완료");
+    }
+
+    @PostMapping("/{productId}/likes")
+    public ResponseEntity<String> toggleLike(
+            @PathVariable Long productId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        // SecurityConfig의 anyRequest().authenticated()에 의해 비로그인 유저는 이 API 접근 불가
+        String result = productService.toggleLike(productId, userDetails.getUserId());
+        return ResponseEntity.ok(result);
     }
 }

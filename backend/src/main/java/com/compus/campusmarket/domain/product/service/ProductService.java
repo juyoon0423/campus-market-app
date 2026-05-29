@@ -6,7 +6,9 @@ import com.compus.campusmarket.domain.product.dto.ProductListResponse;
 import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductImage;
+import com.compus.campusmarket.domain.product.entity.ProductLike;
 import com.compus.campusmarket.domain.product.entity.ProductStatus;
+import com.compus.campusmarket.domain.product.repository.ProductLikeRepository;
 import com.compus.campusmarket.domain.product.repository.ProductRepository;
 import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.repository.UserRepository;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +27,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ProductLikeRepository productLikeRepository;
 
     @Transactional
     public Long createProduct(Long sellerId, ProductCreateRequest request, List<String> imageUrls) {
@@ -50,17 +54,35 @@ public class ProductService {
         return productRepository.save(product).getId();
     }
 
+    // 전체 상품 조회
     @Transactional(readOnly = true)
-    public List<ProductListResponse> getAllProducts() {
-        return productRepository.findActiveProducts().stream() // ✅ 활성 상품만 조회
-                .map(ProductListResponse::new)
+    public List<ProductListResponse> getAllProducts(Long viewerId) {
+        return productRepository.findActiveProducts().stream()
+                .map(product -> {
+                    boolean isLiked = (viewerId != null) &&
+                            productLikeRepository.existsByUser_IdAndProduct_Id(viewerId, product.getId());
+                    return new ProductListResponse(product, isLiked); // ✅ isLiked 전달
+                })
                 .collect(Collectors.toList());
     }
 
-    public ProductDetailResponse getProductDetail(Long productId) {
-        Product product = productRepository.findByIdWithSeller(productId)  // 수정!
+    @Transactional // 조회수가 '업데이트' 되어야 하므로 readOnly=true를 덮어씁니다.
+    public ProductDetailResponse getProductDetail(Long productId, Long viewerId) {
+        Product product = productRepository.findByIdWithSeller(productId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
-        return new ProductDetailResponse(product);
+
+        // 조회수 증가 로직 (비로그인 사용자거나, 본인이 아닐 때만 증가)
+        if (viewerId == null || !product.getSeller().getId().equals(viewerId)) {
+            product.increaseViewCount();
+        }
+
+        // 현재 사용자의 좋아요 여부 확인
+        boolean isLiked = false;
+        if (viewerId != null) {
+            isLiked = productLikeRepository.existsByUser_IdAndProduct_Id(viewerId, productId);
+        }
+
+        return new ProductDetailResponse(product, isLiked);
     }
 
     @Transactional
@@ -104,9 +126,15 @@ public class ProductService {
         productRepository.delete(product);
     }
 
-    public List<ProductListResponse> search(String keyword, String category, ProductStatus status) {
+    // 검색
+    @Transactional(readOnly = true)
+    public List<ProductListResponse> search(String keyword, String category, ProductStatus status, Long viewerId) {
         return productRepository.searchProducts(keyword, category, status).stream()
-                .map(ProductListResponse::new)
+                .map(product -> {
+                    boolean isLiked = (viewerId != null) &&
+                            productLikeRepository.existsByUser_IdAndProduct_Id(viewerId, product.getId());
+                    return new ProductListResponse(product, isLiked); // ✅ isLiked 전달
+                })
                 .collect(Collectors.toList());
     }
 
@@ -117,10 +145,12 @@ public class ProductService {
         product.changeStatus(status, userId);
     }
 
+    // 내 상품 조회
     @Transactional(readOnly = true)
     public List<ProductListResponse> getMyProducts(Long userId) {
         return productRepository.findMyProducts(userId).stream()
-                .map(ProductListResponse::new)
+                // 내 상품은 좋아요를 누를 수 없으므로 무조건 false 전달
+                .map(product -> new ProductListResponse(product, false))
                 .collect(Collectors.toList());
     }
 
@@ -141,6 +171,44 @@ public class ProductService {
 
         // 4. 거래 완료 처리 (상태 변경 및 구매자 세팅)
         product.completeTrade(buyer, sellerId);
+    }
+
+    // 2. 좋아요 토글 로직 추가
+    @Transactional
+    public String toggleLike(Long productId, Long userId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
+
+        // 요구사항: 본인 상품은 좋아요 불가
+        if (product.getSeller().getId().equals(userId)) {
+            throw new IllegalStateException("자신의 상품에는 좋아요를 누를 수 없습니다.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 이미 좋아요를 눌렀는지 확인
+        Optional<ProductLike> existingLike = productLikeRepository.findByUserAndProduct(user, product);
+
+        if (existingLike.isPresent()) {
+            // 이미 있으면 -> 좋아요 취소
+            productLikeRepository.delete(existingLike.get());
+            product.decreaseLikeCount();
+            return "좋아요가 취소되었습니다.";
+        } else {
+            // 없으면 -> 좋아요 추가
+            productLikeRepository.save(new ProductLike(user, product));
+            product.increaseLikeCount();
+            return "좋아요가 추가되었습니다.";
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductListResponse> getLikedProducts(Long userId) {
+        return productLikeRepository.findLikedProductsByUserId(userId).stream()
+                // 이 리스트에 있는 상품들은 이미 내가 찜한 상품들이므로 isLiked는 무조건 true로 고정
+                .map(product -> new ProductListResponse(product, true))
+                .collect(Collectors.toList());
     }
 
 }
