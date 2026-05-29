@@ -1,5 +1,5 @@
 # 🚀 캠퍼스 마켓 (Campus Market) - Backend
-> **대학생 중고거래 플랫폼을 위한 고성능, 보안 중심 REST API 서버** > Spring Boot와 Spring Security, JWT를 활용하여 안정적이고 확장 가능한 백엔드 시스템을 구축하였습니다.
+> **대학생 중고거래 플랫폼을 위한 고성능, 보안 중심 REST API 서버** > Spring Boot와 Spring Security, JWT, 그리고 OAuth2를 활용하여 안정적이고 확장 가능한 백엔드 시스템을 구축하였습니다.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=java&logoColor=white" />
@@ -15,9 +15,7 @@
 
 본 서버는 계층형 아키텍처(Layered Architecture)를 준수하며, 유지보수와 테스트가 용이하도록 설계되었습니다.
 
-
-
-- **Security Layer**: `OncePerRequestFilter`를 상속받은 JWT 필터가 모든 요청의 인증을 사전 처리합니다.
+- **Security Layer**: `OncePerRequestFilter`를 상속받은 JWT 필터와 OAuth2 로그인 로직이 모든 요청의 인증을 사전 처리합니다.
 - **Domain Layer**: JPA 엔티티와 연관관계 매핑을 통해 데이터 정밀도를 유지합니다.
 - **API Layer**: RESTful 원칙을 준수하여 프론트엔드와의 통신 효율을 극대화했습니다.
 
@@ -29,7 +27,7 @@
 - **Framework:** `Spring Boot 3.x`
 - **Build Tool:** `Gradle`
 - **Database:** `MySQL`, `Spring Data JPA`
-- **Security:** `Spring Security`, `JWT (jjwt 0.12.3)`
+- **Security:** `Spring Security`, `OAuth2 Client`, `JWT (jjwt 0.12.3)`
 - **Lombok** & **Validation**
 
 ---
@@ -38,36 +36,42 @@
 
 | 기능 | 기술적 포인트 |
 | :--- | :--- |
-| **🔐 JWT Auth** | `Stateless` 환경 구현, 커스텀 `JwtAuthenticationFilter`를 통한 보안 강화 |
-| **🖼️ Image Server** | `ResourceHandler` 설정을 통한 로컬 이미지 서빙 및 UUID 기반 파일명 관리 |
-| **🛡️ Security Config** | CORS 설정 통합 관리 및 `AuthenticationEntryPoint`를 통한 401 에러 핸들링 |
-| **📈 Product API** | `@RequestPart`를 활용한 JSON 데이터와 다중 이미지 파일의 동시 처리 |
+| **🔐 OAuth2 & JWT Auth** | Spring Security 기반 카카오 소셜 로그인 구현 및 자체 JWT 발급을 통한 Stateless 인증 인가 로직 고도화 |
+| **🖼️ Image & Product API** | `@RequestPart` 활용 및 폼 데이터(multipart/form-data) 기반 기존 이미지 유지/삭제 및 새 이미지 추가 동적 처리 |
+| **❤️ 찜하기 & 조회수** | 본인 상품 필터링, N+1 문제 방지를 위한 Fetch Join 활용, 프론트엔드 상태 관리를 위한 `isLiked` DTO 매핑 |
+| **💬 Real-time Chat** | Spring WebSocket & STOMP 프로토콜을 활용한 실시간 양방향 채팅 시스템 구축 |
+| **🛡️ Security Config** | CORS 설정 통합 관리, HTTP Method별 세밀한 권한 제어 및 `AuthenticationEntryPoint` 커스텀 처리 |
 
 ---
 
 ## 🔍 Troubleshooting (문제 해결 과정)
 
-### 1️⃣ 세션 기반 인증에서 JWT 방식으로의 전환
+### 1️⃣ 소셜 로그인 보안 흐름 설계 (OAuth2 + JWT)
+- **문제:** 프론트엔드에서 직접 카카오 Access Token을 탈취당할 경우 보안 취약점이 발생할 수 있음.
+- **해결:** 백엔드 주도 방식(Spring Security `.oauth2Login()`)을 채택. 프론트엔드는 단순 리다이렉트만 수행하고, 백엔드가 직접 카카오 서버와 Server-to-Server로 통신하여 인가 코드를 교환한 뒤 자체 JWT를 발급하도록 하여 보안성을 극대화하였습니다.
+
+### 2️⃣ Jackson 라이브러리의 Boolean 직렬화 함정 해결
+- **문제:** 프론트엔드에 `isLiked` (좋아요 여부) 상태를 넘겨줄 때, Jackson 라이브러리의 기본 동작으로 인해 JSON 키 값이 `liked`로 자동 변환되어 프론트엔드에서 상태가 초기화되는 버그 발생.
+- **해결:** DTO의 필드에 `@JsonProperty("isLiked")` 어노테이션을 적용하여 직렬화되는 키 이름을 명시적으로 강제함으로써, 프론트-백엔드 간의 데이터 바인딩 에러를 완벽하게 해결하였습니다.
+
+### 3️⃣ 세션 기반 인증에서 JWT 방식으로의 전환
 - **문제:** 프론트엔드(Next.js)와 백엔드의 포트 번호 차이로 인한 세션/쿠키 공유 이슈 발생.
 - **해결:** 서버에 상태를 저장하지 않는 **Stateless JWT 인증 방식**으로 전환. `SecurityContextHolder`에 인증 객체를 직접 주입하는 필터를 구현하여 CORS 환경에서의 인증 문제를 원천적으로 해결하였습니다.
 
-### 2️⃣ API 응답 DTO 설계 최적화
-- **문제:** 엔티티의 복잡한 연관관계(List<ProductImage>)를 그대로 반환할 경우 순환 참조 및 과도한 데이터 노출 위험 발생.
-- **해결:** `ProductListResponse`와 `ProductDetailResponse` 등 용도별 **DTO(Data Transfer Object)**를 분리. 목록 조회 시에는 대표 이미지만, 상세 조회 시에는 전체 이미지 배열을 반환하도록 최적화하였습니다.
+### 4️⃣ API 응답 DTO 설계 최적화 및 N+1 문제 방지
+- **문제:** 엔티티의 복잡한 연관관계(`List<ProductImage>`, `User` 등)를 반환할 경우 순환 참조 위험 및 과도한 쿼리 발생.
+- **해결:** 용도별 **DTO(Data Transfer Object)**를 분리하고, Repository 계층에서 `@Query`와 `fetch join`을 활용하여 '내가 찜한 상품 목록'이나 '전체 상품 목록' 조회 시 발생하는 N+1 문제를 방지하고 쿼리 성능을 최적화하였습니다.
 
-### 3️⃣ 보안 예외 처리 고도화 (403 -> 401)
-- **문제:** 인증되지 않은 사용자가 보호된 자원에 접근 시 시큐리티 기본 설정에 의해 모호한 403 Forbidden 에러가 반환됨.
-- **해결:** `AuthenticationEntryPoint`를 커스텀 구현하여 인증 실패 시 명확한 **401 Unauthorized** 상태 코드와 커스텀 에러 메시지를 반환하도록 개선하였습니다.
+### 5️⃣ WebSocket 순환 참조 및 JSON 직렬화 오류 해결
+- **문제**: 채팅 메시지 조회 시 엔티티(`ChatMessage` ↔ `ChatRoom`) 간의 양방향 연관관계로 인해 JSON 변환 과정에서 무한 루프가 발생, `HttpMessageNotWritableException` 에러와 함께 서버 다운.
+- **해결**: 엔티티를 직접 노출하지 않고, 필요한 필드만 포함하는 **`ChatMessageResponse` DTO**를 구축. 스트림 API를 활용하여 변환함으로써 데이터 크기를 줄이고 순환 참조 문제를 원천 차단하였습니다.
 
-### 4️⃣ WebSocket 순환 참조 및 JSON 직렬화 오류 해결
-- **문제**: 채팅 메시지 조회 시 엔티티(`ChatMessage` ↔ `ChatRoom`) 간의 양방향 연관관계로 인해 JSON 변환 과정에서 무한 루프가 발생, `HttpMessageNotWritableException (Max nesting depth 500+ exceed)` 에러와 함께 서버가 다운되는 현상 발생.
-- **해결**: 엔티티를 API 응답으로 직접 노출하지 않고, 필요한 필드(메시지, 송신자ID, 생성시간 등)만 포함하는 **`ChatMessageResponse` DTO**를 구축하였습니다. 스트림 API를 활용하여 엔티티 리스트를 DTO 리스트로 변환하여 반환함으로써 데이터 크기를 줄이고 순환 참조 문제를 원천 차단하였습니다.
-
-### 5️⃣ STOMP 기반 실시간 채팅의 동기화 및 입력 이슈 처리
+### 6️⃣ STOMP 기반 실시간 채팅의 동기화 및 입력 이슈 처리
 - **문제**: 한글 입력(IME) 환경에서 엔터 키 입력 시 메시지가 중복 전송되는 현상 및 초기 `roomId` 로딩 시점 차이로 인한 `NaN` 파라미터 전달 에러 발생.
 - **해결**:
-  - **FE**: `isComposing` 상태 체크 로직을 도입하여 한글 조합 중 발생하는 중복 이벤트를 방지하였습니다.
-  - **BE**: `roomId` 파싱 시 유효성 검증 로직을 강화하고, 서비스 레이어에서 `createOrGetRoom` 로직을 통해 방 생성과 조회를 원자적(Atomic)으로 처리하여 클라이언트 요청 시 중복 방 생성을 방지하였습니다.
+  - **FE**: `isComposing` 상태 체크 로직을 도입하여 중복 이벤트를 방지.
+  - **BE**: `roomId` 파싱 시 유효성 검증 로직을 강화하고, 서비스 레이어에서 방 생성과 조회를 원자적(Atomic)으로 처리하여 중복 방 생성을 방지하였습니다.
+
 ---
 
 ## ⚙️ Configuration & Installation
