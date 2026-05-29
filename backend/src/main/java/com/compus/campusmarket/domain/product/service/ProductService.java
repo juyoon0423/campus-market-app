@@ -64,15 +64,33 @@ public class ProductService {
     }
 
     @Transactional
-    public void updateProduct(Long productId, Long userId, ProductUpdateRequest request) {
+    public void updateProduct(Long productId, Long userId, ProductUpdateRequest request, List<String> newImageUrls) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
 
-        // 본인 확인
+        // 1. 본인 확인
         product.validateSeller(userId);
 
-        // 수정 반영
+        // 2. 텍스트 정보 업데이트
         product.update(request.getTitle(), request.getDescription(), request.getPrice(), request.getCategory());
+
+        // 3. 기존 이미지 정리 로직
+        // 프론트에서 넘어온 '남길 이미지(remainingImageUrls)'에 포함되지 않은 이미지는 삭제
+        if (request.getRemainingImageUrls() != null) {
+            product.getImages().removeIf(productImage ->
+                    !request.getRemainingImageUrls().contains(productImage.getImageUrl())
+            );
+        } else {
+            // remainingImageUrls가 null로 넘어오면 모두 삭제로 간주
+            product.getImages().clear();
+        }
+
+        // 4. 새로운 이미지 추가 로직
+        if (newImageUrls != null && !newImageUrls.isEmpty()) {
+            newImageUrls.stream()
+                    .map(url -> ProductImage.create(url, product))
+                    .forEach(product.getImages()::add);
+        }
     }
 
     @Transactional

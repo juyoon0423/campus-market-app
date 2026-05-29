@@ -26,7 +26,6 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private Long price;
 
-    // 카테고리 필드 추가
     @Column(nullable = false)
     private String category;
 
@@ -39,31 +38,30 @@ public class Product extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "buyer_id")
-    private User buyer; // 구매자 추가
+    private User buyer;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images = new ArrayList<>();
 
-    // 생성 메서드 수정 (category 파라미터 추가)
+    // 생성
     public static Product create(String title, String description, Long price, User seller, String category) {
         Product product = new Product();
         product.title = title;
         product.description = description;
         product.price = price;
         product.seller = seller;
-        product.category = category; // 추가
+        product.category = category;
         return product;
     }
 
-    // 수정 메서드 수정 (category 포함 가능)
+    // 수정 (텍스트 정보만)
     public void update(String title, String description, Long price, String category) {
         this.title = title;
         this.description = description;
         this.price = price;
-        this.category = category; // 추가
+        this.category = category;
     }
 
-    // 본인 확인 로직
     public void validateSeller(Long userId) {
         if (!this.seller.getId().equals(userId)) {
             throw new IllegalStateException("해당 상품에 대한 권한이 없습니다.");
@@ -71,7 +69,7 @@ public class Product extends BaseTimeEntity {
     }
 
     public void changeStatus(ProductStatus newStatus, Long userId) {
-        validateSeller(userId); // 본인 확인
+        validateSeller(userId);
         this.status = newStatus;
     }
 
@@ -80,6 +78,4 @@ public class Product extends BaseTimeEntity {
         this.status = ProductStatus.SOLD_OUT;
         this.buyer = buyer;
     }
-
-
 }

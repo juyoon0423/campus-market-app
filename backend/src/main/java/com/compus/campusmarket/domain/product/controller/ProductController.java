@@ -45,14 +45,24 @@ public class ProductController {
         return ResponseEntity.ok("상품 등록 완료");
     }
 
-    // 상품 수정
     @PatchMapping("/{productId}")
     public ResponseEntity<String> updateProduct(
             @PathVariable Long productId,
-            @RequestBody ProductUpdateRequest updateRequest,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @RequestPart("data") ProductUpdateRequest updateRequest,
+            @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
+            @AuthenticationPrincipal CustomUserDetails userDetails) throws IOException {
 
-        productService.updateProduct(productId, userDetails.getUserId(), updateRequest);
+        // 1. 새 이미지 파일 저장 (있는 경우)
+        List<String> newImageUrls = new ArrayList<>();
+        if (newImages != null && !newImages.isEmpty()) {
+            for (MultipartFile file : newImages) {
+                String savedFileName = fileUploadUtil.saveFile(file);
+                newImageUrls.add(savedFileName);
+            }
+        }
+
+        // 2. 서비스 단으로 수정 요청 넘기기
+        productService.updateProduct(productId, userDetails.getUserId(), updateRequest, newImageUrls);
         return ResponseEntity.ok("상품 수정 완료");
     }
 
@@ -92,7 +102,6 @@ public class ProductController {
         return ResponseEntity.ok(productService.search(keyword, category, status));
     }
 
-    // ProductController.java에 추가
     @PatchMapping("/{productId}/status")
     public ResponseEntity<String> updateStatus(
             @PathVariable Long productId,

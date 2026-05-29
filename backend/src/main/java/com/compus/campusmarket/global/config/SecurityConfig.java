@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -37,38 +38,45 @@ public class SecurityConfig {
                 // 2. CORS 설정 적용
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 3. 요청 권한 설정
+                // 3. 요청 권한 설정 (핵심 수정 부분)
                 .authorizeHttpRequests(auth -> auth
+                        // 누구나 접근 가능한 경로 (메서드 상관없음)
                         .requestMatchers(
                                 "/api/users/signup",
                                 "/api/users/login",
-                                "/api/products/search",
-                                "/api/products", // [추가] 전체 상품 조회는 누구나 가능하도록
                                 "/images/**",
-                                "/api/products/{productId}", // [수정] 상품 상세 조회는 누구나 가능
                                 "/favicon.ico",
                                 "/error",
                                 "/ws-stomp/**"
-                        ).permitAll() // 위에 나열된 경로는 인증 없이 허용
-                        .anyRequest().authenticated() // 그 외 모든 요청은 JWT 인증 필요
+                        ).permitAll()
+
+                        // [핵심] 상품 관련 API는 'GET(조회)' 요청만 누구나 접근 가능!
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/products",
+                                "/api/products/search",
+                                "/api/products/{productId}"
+                        ).permitAll()
+
+                        // 그 외 모든 요청(상품 등록POST, 수정PATCH, 삭제DELETE, 유저조회 등)은 인증 필요
+                        .anyRequest().authenticated()
                 )
 
-                // 4. 예외 처리 (403 -> 401 변경 핵심 로직)
+                // 4. 예외 처리
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            // 인증되지 않은 사용자가 접근했을 때 401 에러와 메시지 반환
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write("{\"message\":\"인증이 필요합니다. 로그인 후 다시 시도해주세요.\"}");
                         })
                 )
 
-                // 5. JWT 필터 배치
+                // 5. JWT 필터 및 OAuth2 로그인 설정
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
                 );
+
         return http.build();
     }
 
