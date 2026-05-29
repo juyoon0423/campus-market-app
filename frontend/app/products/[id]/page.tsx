@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Eye, Heart } from "lucide-react";
 import { useAuth } from "@/src/context/AuthContext";
-import { getProduct } from "@/src/lib/apis/productApi";
+import { getProduct, toggleLike } from "@/src/lib/apis/productApi";
 import { createOrGetChatRoom, getProductChatRooms } from "@/src/lib/apis/chatApi";
 import type { ProductDetailResponse, ProductStatus } from "@/src/types/product";
 import type { ChatRoomResponse } from "@/src/types/chat";
@@ -46,6 +47,8 @@ export default function ProductDetailPage() {
   const [isLoadingChatRooms, setIsLoadingChatRooms] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [isLiking, setIsLiking] = useState(false);
+  const hasFetchedProduct = useRef(false);
 
   // 현재 사용자가 판매자인지 확인
   const getUserIdFromToken = (token: string | null): number | null => {
@@ -65,7 +68,7 @@ export default function ProductDetailPage() {
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   const currentUserId = getUserIdFromToken(token);
-  const isSeller = currentUserId && product?.sellerId === currentUserId;
+  const isSeller = !!(currentUserId && product?.sellerId === currentUserId);
 
   // 판매자 인식 디버깅 로그
   console.log("=== 판매자 인식 디버깅 ===");
@@ -93,6 +96,11 @@ export default function ProductDetailPage() {
       return;
     }
 
+    // Prevent duplicate API calls (React Strict Mode)
+    if (hasFetchedProduct.current) {
+      return;
+    }
+
     const fetchProduct = async () => {
       try {
         const response = await getProduct(productId);
@@ -105,6 +113,7 @@ export default function ProductDetailPage() {
     };
 
     fetchProduct();
+    hasFetchedProduct.current = true;
   }, [productId, isInvalidProductId]);
 
   const handleInitiateChat = async () => {
@@ -255,6 +264,48 @@ export default function ProductDetailPage() {
     } finally {
       setIsDeleting(false);
       setIsDropdownOpen(false);
+    }
+  };
+
+  const handleToggleLike = async () => {
+    if (!product || !product.id) return;
+    if (!isLoggedIn) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    // Optimistic update: 즉시 UI 업데이트
+    const previousIsLiked = product.isLiked;
+    const previousLikeCount = product.likeCount;
+
+    setProduct(prev => prev ? {
+      ...prev,
+      isLiked: !prev.isLiked,
+      likeCount: prev.isLiked ? prev.likeCount - 1 : prev.likeCount + 1,
+    } : null);
+
+    setIsLiking(true);
+
+    try {
+      await toggleLike(product.id);
+    } catch (error) {
+      console.error("Toggle like error:", error);
+      
+      // Rollback: 실패 시 원래 상태로 복원
+      setProduct(prev => prev ? {
+        ...prev,
+        isLiked: previousIsLiked,
+        likeCount: previousLikeCount,
+      } : null);
+
+      // 자신의 상품인 경우 에러 메시지 표시
+      if (error instanceof Error && error.message.includes("자신의 상품")) {
+        alert("자신의 상품은 찜할 수 없습니다.");
+      } else {
+        alert("찜하기에 실패했습니다.");
+      }
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -431,17 +482,42 @@ export default function ProductDetailPage() {
           <p className="text-2xl font-bold text-slate-900">
             {product.price.toLocaleString()}원
           </p>
-          <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${
-            product?.status === "SELLING" 
-              ? "bg-green-100 text-green-800"
-              : product?.status === "RESERVED"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-gray-100 text-gray-800"
-          }`}>
-            {product?.status === "SELLING" && "판매중"}
-            {product?.status === "RESERVED" && "예약중"}
-            {product?.status === "SOLD_OUT" && "판매완료"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${
+              product?.status === "SELLING"
+                ? "bg-green-100 text-green-800"
+                : product?.status === "RESERVED"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-gray-100 text-gray-800"
+            }`}>
+              {product?.status === "SELLING" && "판매중"}
+              {product?.status === "RESERVED" && "예약중"}
+              {product?.status === "SOLD_OUT" && "판매완료"}
+            </span>
+            <button
+              type="button"
+              onClick={handleToggleLike}
+              disabled={isLiking || isSeller}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white transition-colors hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={product.isLiked ? "찜 취소" : "찜하기"}
+            >
+              <Heart
+                className={`h-5 w-5 ${product.isLiked ? "fill-red-500 text-red-500" : "text-gray-400"}`}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* 조회수와 좋아요 수 표시 */}
+        <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex items-center gap-1.5">
+            <Eye className="h-4 w-4" />
+            <span>조회 {product.viewCount}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Heart className="h-4 w-4" />
+            <span>찜 {product.likeCount}</span>
+          </div>
         </div>
         <p className="mt-6 whitespace-pre-wrap text-slate-700">
           {product.description}

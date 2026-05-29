@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Eye, Heart } from "lucide-react";
 import { useAuth } from "@/src/context/AuthContext";
 import { getAllProducts, searchProducts } from "@/src/lib/apis/productApi";
 import type { ProductListResponse, ProductStatus } from "@/src/types/product";
@@ -269,6 +270,16 @@ export default function HomePage() {
                         {product.status === "RESERVED" && "예약중"}
                         {product.status === "SOLD_OUT" && "판매완료"}
                       </span>
+                    </div>
+                    <div className="flex items-center gap-3 pt-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>{product.viewCount}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Heart className={`h-3.5 w-3.5 ${product.isLiked ? "fill-red-500 text-red-500" : ""}`} />
+                        <span>{product.likeCount}</span>
+                      </div>
                     </div>
                   </div>
                 </Link>
