@@ -8,6 +8,18 @@ import type { ProductDetailResponse, ProductUpdateRequest } from "@/src/types/pr
 
 const FALLBACK_IMAGE_URL = "/window.svg";
 
+function getImageUrl(imageUrl?: string) {
+  if (!imageUrl) {
+    return FALLBACK_IMAGE_URL;
+  }
+
+  if (imageUrl.startsWith("http")) {
+    return imageUrl;
+  }
+
+  return `http://localhost:8080/images/${imageUrl}`;
+}
+
 export default function ProductEditPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -25,7 +37,11 @@ export default function ProductEditPage() {
     description: "",
     price: 0,
     category: "",
+    remainingImageUrls: [],
   });
+  
+  const [remainingImageUrls, setRemainingImageUrls] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
 
   const categoryOptions = [
     "학업 관련",
@@ -51,7 +67,7 @@ export default function ProductEditPage() {
         const response = await getProduct(productId);
         
         // 판매자 권한 확인
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('accessToken');
         if (token) {
           const payload = token.split('.')[1];
           if (payload) {
@@ -72,7 +88,9 @@ export default function ProductEditPage() {
           description: response.description,
           price: response.price,
           category: response.category,
+          remainingImageUrls: response.imageUrls || [],
         });
+        setRemainingImageUrls(response.imageUrls || []);
       } catch {
         setErrorMessage("상품 정보를 불러오지 못했습니다.");
       } finally {
@@ -95,7 +113,15 @@ export default function ProductEditPage() {
     setErrorMessage("");
 
     try {
-      await updateProduct(productId, formData);
+      const updateRequest: ProductUpdateRequest = {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        category: formData.category,
+        remainingImageUrls: remainingImageUrls,
+      };
+      
+      await updateProduct(productId, updateRequest, newImages);
       alert("상품이 성공적으로 수정되었습니다.");
       router.push(`/products/${productId}`);
     } catch (error) {
@@ -111,6 +137,22 @@ export default function ProductEditPage() {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleRemoveExistingImage = (imageUrl: string) => {
+    setRemainingImageUrls(prev => prev.filter(url => url !== imageUrl));
+  };
+
+  const handleAddNewImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newImageFiles = Array.from(files);
+    setNewImages(prev => [...prev, ...newImageFiles]);
+  };
+
+  const handleRemoveNewImage = (index: number) => {
+    setNewImages(prev => prev.filter((_, i) => i !== index));
   };
 
   if (isLoading) {
@@ -226,6 +268,68 @@ export default function ProductEditPage() {
               placeholder="상품에 대한 자세한 설명을 입력하세요"
               required
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              기존 이미지
+            </label>
+            {remainingImageUrls.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {remainingImageUrls.map((imageUrl, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={getImageUrl(imageUrl)}
+                      alt={`기존 이미지 ${index + 1}`}
+                      className="h-24 w-24 rounded-lg object-cover border border-slate-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExistingImage(imageUrl)}
+                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">기존 이미지가 없습니다.</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="newImages" className="mb-2 block text-sm font-medium text-slate-700">
+              새 이미지 추가
+            </label>
+            <input
+              id="newImages"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleAddNewImages}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500"
+            />
+            {newImages.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-3">
+                {newImages.map((file, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`새 이미지 ${index + 1}`}
+                      className="h-24 w-24 rounded-lg object-cover border border-slate-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveNewImage(index)}
+                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-4">

@@ -63,7 +63,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   const currentUserId = getUserIdFromToken(token);
   const isSeller = currentUserId && product?.sellerId === currentUserId;
 
@@ -139,7 +139,7 @@ export default function ProductDetailPage() {
     setStatusError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       if (!token) {
         setStatusError("로그인이 필요합니다.");
         return;
@@ -225,7 +225,7 @@ export default function ProductDetailPage() {
     setDeleteError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       if (!token) {
         setDeleteError("로그인이 필요합니다.");
         return;
@@ -454,7 +454,7 @@ export default function ProductDetailPage() {
           />
         </section>
 
-        {/* 채팅 문의하기 버튼 (판매자가 아닌 경우) - 맨 하단으로 이동 */}
+        {/* 채팅 문의하기 버튼 (판매자가 아닌 경우) */}
         {isHydrated && (
           isLoggedIn ? (
             !isSeller && (
