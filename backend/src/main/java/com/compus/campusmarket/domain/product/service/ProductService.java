@@ -1,5 +1,6 @@
 package com.compus.campusmarket.domain.product.service;
 
+import com.compus.campusmarket.domain.ai.service.AiService;
 import com.compus.campusmarket.domain.product.dto.ProductCreateRequest;
 import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
 import com.compus.campusmarket.domain.product.dto.ProductListResponse;
@@ -28,14 +29,24 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ProductLikeRepository productLikeRepository;
+    private final AiService aiService; // ✅ 추가 (AI 서비스 주입)
 
     @Transactional
     public Long createProduct(Long sellerId, ProductCreateRequest request, List<String> imageUrls) {
-        // 1. 판매자 정보 조회
+
+        // 🚨 1. AI 부적절 매물 필터링 (저장 전에 검사)
+        String contentToAnalyze = request.getTitle() + " " + request.getDescription();
+        boolean isAppropriate = aiService.isAppropriateProduct(contentToAnalyze);
+
+        if (!isAppropriate) {
+            throw new IllegalArgumentException("부적절한 내용(욕설, 불법 등)이 포함되어 상품을 등록할 수 없습니다.");
+        }
+
+        // 2. 판매자 정보 조회
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // 2. 상품 생성
+        // 3. 상품 생성
         Product product = Product.create(
                 request.getTitle(),
                 request.getDescription(),
@@ -44,7 +55,7 @@ public class ProductService {
                 request.getCategory()
         );
 
-        // 3. 이미지 정보 추가
+        // 4. 이미지 정보 추가
         if (imageUrls != null) {
             imageUrls.stream()
                     .map(url -> ProductImage.create(url, product))
