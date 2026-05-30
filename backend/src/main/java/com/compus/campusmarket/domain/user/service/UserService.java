@@ -14,10 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final EmailService emailService; // 👈 상단 의존성 주입에 추가
 
     @Transactional
     public Long signUp(UserSignUpRequest request) {
-        // 중복 검증 (이메일 및 학번)
+        // 🚨 1. 학교 이메일 도메인인지 한 번 더 검증
+        if (!request.getEmail().endsWith("@sj.sangji.ac.kr")) {
+            throw new IllegalArgumentException("상지대학교 학생만 가입할 수 있습니다.");
+        }
+
+        // 🚨 2. 이메일 인증을 완료했는지 확인
+        if (!emailService.isVerified(request.getEmail())) {
+            throw new IllegalStateException("이메일 인증이 완료되지 않았습니다.");
+        }
+
+        // 3. 중복 검증 (이메일 및 학번)
         validateDuplicateUser(request.getEmail(), request.getStudentId());
 
         User user = User.create(
@@ -25,10 +36,15 @@ public class UserService {
                 request.getName(),
                 request.getStudentId(),
                 request.getDepartment(),
-                request.getPassword() // 주의: 현재는 평문 저장, 보안상 암호화가 권장됨
+                request.getPassword()
         );
 
-        return userRepository.save(user).getId();
+        Long savedUserId = userRepository.save(user).getId();
+
+        // 4. 가입 완료 후 인증 상태 삭제 (메모리 정리)
+        emailService.removeVerificationStatus(request.getEmail());
+
+        return savedUserId;
     }
 
     public User login(String email, String password) {

@@ -50,6 +50,8 @@ public class SecurityConfig {
                                 "/ws-stomp/**"
                         ).permitAll()
 
+                        .requestMatchers("/api/users/emails/**").permitAll()
+
                         // [핵심] 상품 관련 API는 'GET(조회)' 요청만 누구나 접근 가능!
                         .requestMatchers(HttpMethod.GET,
                                 "/api/products",

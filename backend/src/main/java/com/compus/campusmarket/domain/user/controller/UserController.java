@@ -2,6 +2,7 @@ package com.compus.campusmarket.domain.user.controller;
 
 import com.compus.campusmarket.domain.user.dto.*;
 import com.compus.campusmarket.domain.user.entity.User;
+import com.compus.campusmarket.domain.user.service.EmailService;
 import com.compus.campusmarket.domain.user.service.UserService;
 import com.compus.campusmarket.global.config.auth.CustomUserDetails;
 import com.compus.campusmarket.global.util.JwtTokenProvider;
@@ -20,6 +21,7 @@ public class UserController {
 
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailService emailService;
 
     @PostMapping("/signup")
     public ResponseEntity<String> signUp(@RequestBody UserSignUpRequest request) {
@@ -53,5 +55,26 @@ public class UserController {
         // UserService에 이미 구현된 getUserProfile을 호출합니다.
         UserProfileResponse profile = userService.getUserProfile(userId);
         return ResponseEntity.ok(profile);
+    }
+
+    // 이메일 인증 코드 발송 요청
+    @PostMapping("/emails/verification-requests")
+    public ResponseEntity<String> sendMessage(@RequestParam("email") String email) {
+        emailService.sendVerificationCode(email);
+        return ResponseEntity.ok("인증 코드가 발송되었습니다.");
+    }
+
+    // 이메일 인증 코드 확인
+    @GetMapping("/emails/verifications")
+    public ResponseEntity<String> verifyCode(
+            @RequestParam("email") String email,
+            @RequestParam("code") String code) {
+        boolean isVerified = emailService.verifyCode(email, code);
+
+        if (isVerified) {
+            return ResponseEntity.ok("인증에 성공했습니다.");
+        } else {
+            return ResponseEntity.badRequest().body("인증 코드가 일치하지 않습니다.");
+        }
     }
 }
