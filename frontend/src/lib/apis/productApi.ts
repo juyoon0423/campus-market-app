@@ -35,8 +35,24 @@ export async function createProduct(
 export async function updateProduct(
   productId: number,
   request: ProductUpdateRequest,
+  newImages?: File[],
 ): Promise<string> {
-  const response = await api.patch<string>(`/api/products/${productId}`, request);
+  const formData = new FormData();
+  const jsonBlob = new Blob([JSON.stringify(request)], {
+    type: "application/json",
+  });
+
+  formData.append("data", jsonBlob);
+
+  newImages?.forEach((image) => {
+    formData.append("newImages", image);
+  });
+
+  const response = await api.patch<string>(`/api/products/${productId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return response.data;
 }
 
@@ -67,4 +83,20 @@ export async function searchProducts(
     params,
   });
   return response.data;
+}
+
+export async function toggleLike(productId: number): Promise<void> {
+  await api.post(`/api/products/${productId}/likes`);
+}
+
+export async function getLikedProducts(): Promise<ProductListResponse[]> {
+  const response = await api.get<ProductListResponse[]>("/api/products/me/likes");
+  return response.data;
+}
+
+export async function generateDescription(title: string, category: string): Promise<string> {
+  const response = await api.get<{ description: string }>("/api/ai/generate-description", {
+    params: { title, category },
+  });
+  return response.data.description;
 }

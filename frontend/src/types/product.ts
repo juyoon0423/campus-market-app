@@ -12,6 +12,7 @@ export type ProductUpdateRequest = {
   description: string;
   price: number;
   category: string;
+  remainingImageUrls?: string[];
 };
 
 export type ProductListResponse = {
@@ -21,6 +22,9 @@ export type ProductListResponse = {
   sellerName: string;
   representativeImageUrl?: string | null;
   status: ProductStatus;
+  viewCount: number;
+  likeCount: number;
+  isLiked: boolean;
 };
 
 export type ProductDetailResponse = {
@@ -34,4 +38,7 @@ export type ProductDetailResponse = {
   sellerTrustScore: number;
   status: ProductStatus;
   imageUrls?: string[] | null;
+  viewCount: number;
+  likeCount: number;
+  isLiked: boolean;
 };

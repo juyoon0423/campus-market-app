@@ -34,3 +34,15 @@ export async function getUserProfile(userId: number): Promise<UserProfileRespons
     throw error;
   }
 }
+
+export async function sendVerificationCode(email: string): Promise<void> {
+  await api.post("/api/users/emails/verification-requests", null, {
+    params: { email },
+  });
+}
+
+export async function verifyEmailCode(email: string, code: string): Promise<void> {
+  await api.get("/api/users/emails/verifications", {
+    params: { email, code },
+  });
+}
