@@ -2,9 +2,11 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { useAuth } from "@/src/context/AuthContext";
-import { getProduct, updateProduct } from "@/src/lib/apis/productApi";
+import { getProduct, updateProduct, generateDescription } from "@/src/lib/apis/productApi";
 import type { ProductDetailResponse, ProductUpdateRequest } from "@/src/types/product";
+import { AxiosError } from "axios";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
 
@@ -31,6 +33,7 @@ export default function ProductEditPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   
   const [formData, setFormData] = useState<ProductUpdateRequest>({
     title: "",
@@ -126,7 +129,21 @@ export default function ProductEditPage() {
       router.push(`/products/${productId}`);
     } catch (error) {
       console.error("Update product error:", error);
-      setErrorMessage("상품 수정에 실패했습니다.");
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 400) {
+          // Check for inappropriate content error message
+          const errorData = error.response?.data as { message?: string };
+          if (errorData?.message?.includes("부적절한 내용")) {
+            setErrorMessage(errorData.message);
+          } else {
+            setErrorMessage("입력값을 확인해주세요.");
+          }
+        } else {
+          setErrorMessage("상품 수정에 실패했습니다.");
+        }
+      } else {
+        setErrorMessage("상품 수정에 실패했습니다.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -153,6 +170,29 @@ export default function ProductEditPage() {
 
   const handleRemoveNewImage = (index: number) => {
     setNewImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!formData.title.trim() || !formData.category.trim()) {
+      alert("제목과 카테고리를 먼저 입력해주세요.");
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    setErrorMessage("");
+
+    try {
+      const generatedDescription = await generateDescription(formData.title, formData.category);
+      setFormData(prev => ({
+        ...prev,
+        description: generatedDescription
+      }));
+    } catch (error) {
+      console.error("Generate description error:", error);
+      setErrorMessage("설명 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setIsGeneratingDescription(false);
+    }
   };
 
   if (isLoading) {
@@ -256,14 +296,26 @@ export default function ProductEditPage() {
           </div>
 
           <div>
-            <label htmlFor="description" className="mb-2 block text-sm font-medium text-slate-700">
-              상품 설명 *
-            </label>
+            <div className="mb-2 flex items-center justify-between">
+              <label htmlFor="description" className="block text-sm font-medium text-slate-700">
+                상품 설명 *
+              </label>
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={isGeneratingDescription || isSubmitting}
+                className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-medium text-white transition-all hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {isGeneratingDescription ? "AI가 작성 중..." : "AI로 설명 쓰기"}
+              </button>
+            </div>
             <textarea
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500"
+              disabled={isGeneratingDescription || isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500 disabled:bg-slate-50"
               rows={8}
               placeholder="상품에 대한 자세한 설명을 입력하세요"
               required

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from "react";
-import { createProduct } from "@/src/lib/apis/productApi";
+import { Sparkles } from "lucide-react";
+import { createProduct, generateDescription } from "@/src/lib/apis/productApi";
 import { useAuth } from "@/src/context/AuthContext";
 import { AxiosError } from "axios";
 
@@ -16,6 +17,7 @@ export default function UploadPage() {
   const [category, setCategory] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -31,6 +33,26 @@ export default function UploadPage() {
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const nextFiles = event.target.files ? Array.from(event.target.files) : [];
     setImages(nextFiles);
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!title.trim() || !category.trim()) {
+      alert("제목과 카테고리를 먼저 입력해주세요.");
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    setErrorMessage("");
+
+    try {
+      const generatedDescription = await generateDescription(title, category);
+      setDescription(generatedDescription);
+    } catch (error) {
+      console.error("Generate description error:", error);
+      setErrorMessage("설명 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setIsGeneratingDescription(false);
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -70,7 +92,13 @@ export default function UploadPage() {
           setErrorMessage("인증이 만료되었습니다. 다시 로그인해주세요.");
           router.replace("/login");
         } else if (error.response?.status === 400) {
-          setErrorMessage("입력값을 확인해주세요.");
+          // Check for inappropriate content error message
+          const errorData = error.response?.data as { message?: string };
+          if (errorData?.message?.includes("부적절한 내용")) {
+            setErrorMessage(errorData.message);
+          } else {
+            setErrorMessage("입력값을 확인해주세요.");
+          }
         } else {
           setErrorMessage("상품 등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
         }
@@ -120,18 +148,26 @@ export default function UploadPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="description"
-              className="mb-1 block text-sm text-slate-700"
-            >
-              설명
-            </label>
+            <div className="mb-1 flex items-center justify-between">
+              <label htmlFor="description" className="block text-sm text-slate-700">
+                설명
+              </label>
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={isGeneratingDescription || isSubmitting}
+                className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-medium text-white transition-all hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {isGeneratingDescription ? "AI가 작성 중..." : "AI로 설명 쓰기"}
+              </button>
+            </div>
             <textarea
               id="description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               required
-              disabled={isSubmitting}
+              disabled={isSubmitting || isGeneratingDescription}
               rows={5}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 disabled:bg-slate-50"
             />
