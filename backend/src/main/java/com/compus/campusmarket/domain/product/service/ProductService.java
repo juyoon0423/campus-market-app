@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.cache.annotation.Cacheable;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,6 +31,7 @@ public class ProductService {
     private final UserRepository userRepository;
     private final ProductLikeRepository productLikeRepository;
     private final AiService aiService; // ✅ 추가 (AI 서비스 주입)
+    private final ProductCacheService productCacheService;
 
     @Transactional
     public Long createProduct(Long sellerId, ProductCreateRequest request, List<String> imageUrls) {
@@ -140,11 +142,19 @@ public class ProductService {
     // 검색
     @Transactional(readOnly = true)
     public List<ProductListResponse> search(String keyword, String category, ProductStatus status, Long viewerId, Pageable pageable) {
-        return productRepository.searchProducts(keyword, category, status, pageable).stream()
-                .map(product -> {
-                    boolean isLiked = (viewerId != null) &&
-                            productLikeRepository.existsByUser_IdAndProduct_Id(viewerId, product.getId());
-                    return new ProductListResponse(product, isLiked);
+
+        // ✅ 내부 호출(this)이 아니라 외부 호출(Proxy 거침)로 변경됨!
+        List<ProductListResponse> rawProducts = productCacheService.getCachedProducts(keyword, category, status, pageable);
+
+        if (viewerId == null) {
+            return rawProducts;
+        }
+
+        return rawProducts.stream()
+                .map(productDto -> {
+                    boolean isLiked = productLikeRepository.existsByUser_IdAndProduct_Id(viewerId, productDto.getId());
+                    productDto.setLiked(isLiked);
+                    return productDto;
                 })
                 .collect(Collectors.toList());
     }
