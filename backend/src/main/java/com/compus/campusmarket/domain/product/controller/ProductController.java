@@ -10,7 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,9 +114,10 @@ public class ProductController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) ProductStatus status,
-            @AuthenticationPrincipal CustomUserDetails userDetails) { // ✅ 추가
+            @PageableDefault(size = 20) Pageable pageable, // 👈 추가된 부분
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long viewerId = (userDetails != null) ? userDetails.getUserId() : null;
-        return ResponseEntity.ok(productService.search(keyword, category, status, viewerId));
+        return ResponseEntity.ok(productService.search(keyword, category, status, viewerId, pageable));
     }
 
     @PatchMapping("/{productId}/status")

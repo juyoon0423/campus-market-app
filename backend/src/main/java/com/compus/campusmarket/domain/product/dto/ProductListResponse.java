@@ -17,9 +17,8 @@ public class ProductListResponse {
     private int viewCount;
     private int likeCount;
     @JsonProperty("isLiked")
-    private boolean isLiked; // ✅ 추가
+    private boolean isLiked;
 
-    // ✅ 생성자에 boolean isLiked 파라미터 추가
     public ProductListResponse(Product product, boolean isLiked) {
         this.id = product.getId();
         this.title = product.getTitle();
@@ -28,7 +27,7 @@ public class ProductListResponse {
         this.status = product.getStatus();
         this.viewCount = product.getViewCount();
         this.likeCount = product.getLikeCount();
-        this.isLiked = isLiked; // ✅ 추가
+        this.isLiked = isLiked;
         this.representativeImageUrl = product.getImages().isEmpty() ?
                 null : product.getImages().get(0).getImageUrl();
     }

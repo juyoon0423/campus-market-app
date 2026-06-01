@@ -47,7 +47,8 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/favicon.ico",
                                 "/error",
-                                "/ws-stomp/**"
+                                "/ws-stomp/**",
+                                "/api/dummy/**"
                         ).permitAll()
 
                         .requestMatchers("/api/users/emails/**").permitAll()

@@ -16,7 +16,7 @@ import com.compus.campusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -139,12 +139,12 @@ public class ProductService {
 
     // 검색
     @Transactional(readOnly = true)
-    public List<ProductListResponse> search(String keyword, String category, ProductStatus status, Long viewerId) {
-        return productRepository.searchProducts(keyword, category, status).stream()
+    public List<ProductListResponse> search(String keyword, String category, ProductStatus status, Long viewerId, Pageable pageable) {
+        return productRepository.searchProducts(keyword, category, status, pageable).stream()
                 .map(product -> {
                     boolean isLiked = (viewerId != null) &&
                             productLikeRepository.existsByUser_IdAndProduct_Id(viewerId, product.getId());
-                    return new ProductListResponse(product, isLiked); // ✅ isLiked 전달
+                    return new ProductListResponse(product, isLiked);
                 })
                 .collect(Collectors.toList());
     }

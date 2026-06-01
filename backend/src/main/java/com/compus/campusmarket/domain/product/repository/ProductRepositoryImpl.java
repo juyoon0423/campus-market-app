@@ -3,11 +3,12 @@ package com.compus.campusmarket.domain.product.repository;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.entity.QProduct;
+import org.springframework.data.domain.Pageable;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
-
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 import static com.compus.campusmarket.domain.product.entity.QProduct.product;
@@ -17,19 +18,19 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
+    // 파라미터에 Pageable 추가
     @Override
-    public List<Product> searchProducts(String keyword, String category, ProductStatus status) {
+    public List<Product> searchProducts(String keyword, String category, ProductStatus status, Pageable pageable) {
         return queryFactory
                 .selectFrom(product)
-                .distinct() // OneToMany 페치 조인 시 중복 데이터 제거
-                .leftJoin(product.seller).fetchJoin()
-                .leftJoin(product.images).fetchJoin()
                 .where(
                         containKeyword(keyword),
                         eqCategory(category),
                         eqStatus(status)
                 )
                 .orderBy(product.createdAt.desc())
+                .offset(pageable.getOffset()) // 페이징 시작점
+                .limit(pageable.getPageSize()) // 페이징 갯수 (20개)
                 .fetch();
     }
 
