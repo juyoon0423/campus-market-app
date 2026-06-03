@@ -8,18 +8,18 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getAllProducts, searchProducts } from "@/src/lib/apis/productApi";
 import type { ProductListResponse, ProductStatus } from "@/src/types/product";
 
-const FALLBACK_IMAGE_URL = "/window.svg";
-
 function getImageUrl(representativeImageUrl?: string | null) {
   if (!representativeImageUrl) {
-    return FALLBACK_IMAGE_URL;
+    return null;
   }
 
   if (representativeImageUrl.startsWith("http")) {
     return representativeImageUrl;
   }
 
-  return `http://localhost:8080/images/${representativeImageUrl}`;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const imagePath = representativeImageUrl.startsWith("/") ? representativeImageUrl : `/${representativeImageUrl}`;
+  return `${apiUrl}${imagePath}`;
 }
 
 export default function HomePage() {
@@ -89,7 +89,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8 md:py-10">
-      <main className="mx-auto w-full max-w-6xl">
+      <main className="mx-auto w-full max-w-5xl">
         <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
@@ -171,11 +171,13 @@ export default function HomePage() {
                 />
               </svg>
             </div>
-            
+
             {/* 필터 */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex-1">
-                <label className="mb-1 block text-xs font-medium text-slate-600">카테고리</label>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  카테고리
+                </label>
                 <select
                   value={category}
                   onChange={(event) => setCategory(event.target.value)}
@@ -188,12 +190,16 @@ export default function HomePage() {
                   <option value="기타">기타</option>
                 </select>
               </div>
-              
+
               <div className="flex-1">
-                <label className="mb-1 block text-xs font-medium text-slate-600">상태</label>
+                <label className="mb-1 block text-xs font-medium text-slate-600">
+                  상태
+                </label>
                 <select
                   value={status}
-                  onChange={(event) => setStatus(event.target.value as ProductStatus | "")}
+                  onChange={(event) =>
+                    setStatus(event.target.value as ProductStatus | "")
+                  }
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-[#ff8a3d] focus:bg-white"
                 >
                   <option value="">전체 상태</option>
@@ -202,7 +208,7 @@ export default function HomePage() {
                   <option value="SOLD_OUT">판매완료</option>
                 </select>
               </div>
-              
+
               <div className="flex gap-2 sm:mt-6">
                 <button
                   type="button"
@@ -240,44 +246,55 @@ export default function HomePage() {
                 <Link
                   key={product.id}
                   href={`/products/${product.id}`}
-                  className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg"
+                  className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                 >
-                  <div className="h-48 w-full overflow-hidden rounded-2xl bg-slate-200">
-                    <div
-                      className="h-full w-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${imageUrl})` }}
-                    />
+                  <div className="aspect-square w-full overflow-hidden rounded-2xl bg-gray-100">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={product.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                        <span className="text-sm">이미지 없음</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-2 p-4">
-                    <h2 className="line-clamp-1 text-[15px] font-semibold text-slate-900">
+                  <div className="space-y-3 p-4">
+                    <h2 className="line-clamp-1 text-base font-semibold text-slate-900">
                       {product.title}
                     </h2>
                     <p className="text-sm text-slate-500 before:mr-1 before:content-['👤']">
                       {product.sellerName}
                     </p>
                     <div className="flex items-center justify-between pt-1">
-                      <p className="text-2xl font-extrabold tracking-tight text-slate-900">
+                      <p className="text-lg font-extrabold tracking-tight text-slate-900">
                         ₩ {product.price.toLocaleString()}
                       </p>
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        product.status === "SELLING" 
-                          ? "bg-green-100 text-green-800"
-                          : product.status === "RESERVED"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          product.status === "SELLING"
+                            ? "bg-green-100 text-green-800"
+                            : product.status === "RESERVED"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
                         {product.status === "SELLING" && "판매중"}
                         {product.status === "RESERVED" && "예약중"}
                         {product.status === "SOLD_OUT" && "판매완료"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 pt-1 text-xs text-gray-500">
+                    <div className="flex items-center gap-3 pt-1 text-xs text-gray-400">
                       <div className="flex items-center gap-1">
                         <Eye className="h-3.5 w-3.5" />
                         <span>{product.viewCount}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Heart className={`h-3.5 w-3.5 ${product.isLiked ? "fill-red-500 text-red-500" : ""}`} />
+                        <Heart
+                          className={`h-3.5 w-3.5 ${product.isLiked ? "fill-red-500 text-red-500" : ""}`}
+                        />
                         <span>{product.likeCount}</span>
                       </div>
                     </div>

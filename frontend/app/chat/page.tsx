@@ -432,13 +432,13 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-8">
-      <main className="mx-auto w-full max-w-6xl rounded-2xl bg-white p-4 shadow-sm md:p-6">
+    <div className="min-h-screen bg-gray-50 px-4 py-8">
+      <main className="mx-auto w-full max-w-5xl rounded-2xl bg-white p-4 shadow-sm md:p-6">
         <header className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-slate-900">채팅</h1>
           <Link
             href="/"
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
           >
             메인으로
           </Link>
@@ -456,7 +456,7 @@ export default function ChatPage() {
         ) : null}
 
         <section className="grid min-h-[560px] gap-4 md:grid-cols-[280px_1fr]">
-          <aside className="rounded-xl border border-slate-200 p-3">
+          <aside className="rounded-xl border border-gray-200 bg-white p-3">
             <h2 className="mb-3 text-sm font-semibold text-slate-700">내 채팅방</h2>
             {isLoadingRooms ? (
               <p className="text-sm text-slate-500">채팅방을 불러오는 중...</p>
@@ -469,10 +469,10 @@ export default function ChatPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedRoomId(room.id)}
-                      className={`w-full rounded-lg border px-3 py-2 text-left ${
+                      className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
                         room.id === selectedRoomId
                           ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                          : "border-gray-200 bg-white text-slate-700 hover:bg-gray-50"
                       }`}
                     >
                       <p className="truncate text-sm font-semibold">{room.productName}</p>
@@ -486,8 +486,8 @@ export default function ChatPage() {
             )}
           </aside>
 
-          <section className="flex flex-col rounded-xl border border-slate-200">
-            <div className="border-b border-slate-200 px-4 py-3">
+          <section className="flex flex-col rounded-xl border border-gray-200 bg-white">
+            <div className="border-b border-gray-200 px-4 py-3">
               <p className="text-sm font-semibold text-slate-700">
                 {selectedRoomId ? `채팅방 #${selectedRoomId}` : "채팅방을 선택하세요"}
               </p>
@@ -509,10 +509,10 @@ export default function ChatPage() {
                       className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[70%] rounded-xl px-3 py-2 text-sm ${
+                        className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm ${
                           isMine
-                            ? "bg-slate-900 text-white"
-                            : "bg-slate-100 text-slate-800"
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-slate-800"
                         }`}
                       >
                         {message.message}
@@ -523,7 +523,7 @@ export default function ChatPage() {
               )}
             </div>
 
-            <div className="flex gap-2 border-t border-slate-200 p-3">
+            <div className="flex gap-2 border-t border-gray-200 p-3">
               <input
                 value={inputMessage}
                 onChange={(event) => setInputMessage(event.target.value)}
@@ -535,13 +535,13 @@ export default function ChatPage() {
                   }
                 }}
                 placeholder="메시지를 입력하세요"
-                className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
                 disabled={selectedRoomId === null}
               />
               <button
                 type="button"
                 onClick={handleSendMessage}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
               >
                 전송
               </button>

@@ -19,14 +19,16 @@ function formatDate(value: string) {
 
 function getImageUrl(representativeImageUrl?: string | null) {
   if (!representativeImageUrl) {
-    return "/window.svg";
+    return null;
   }
 
   if (representativeImageUrl.startsWith("http")) {
     return representativeImageUrl;
   }
 
-  return `http://localhost:8080/images/${representativeImageUrl}`;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const imagePath = representativeImageUrl.startsWith("/") ? representativeImageUrl : `/${representativeImageUrl}`;
+  return `${apiUrl}${imagePath}`;
 }
 
 export default function MyPage() {
@@ -107,27 +109,27 @@ export default function MyPage() {
   const errorMessage = userError?.message || productsError;
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-10">
+    <div className="min-h-screen bg-gray-50 px-4 py-10">
       <main className="mx-auto w-full max-w-5xl space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-3xl font-bold text-slate-900">마이페이지</h1>
           <div className="flex gap-2">
             <Link
               href="/"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
             >
               메인으로
             </Link>
             <Link
               href="/chat"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
             >
               채팅
             </Link>
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
             >
               로그아웃
             </button>
@@ -151,55 +153,54 @@ export default function MyPage() {
         {!isLoading && !errorMessage && user ? (
           <>
             <section className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">내 정보</h2>
-              <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-                <div>
-                  <dt className="text-slate-500">이름</dt>
-                  <dd className="mt-1 font-medium">{user.name}</dd>
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-slate-700 text-white text-2xl font-bold">
+                  {user.name.charAt(0)}
                 </div>
-                <div>
-                  <dt className="text-slate-500">학번</dt>
-                  <dd className="mt-1 font-medium">{user.studentId}</dd>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-slate-900">{user.name}</h2>
+                  <p className="text-sm text-slate-500">{user.department} · {user.studentId}</p>
                 </div>
-                <div>
-                  <dt className="text-slate-500">학과</dt>
-                  <dd className="mt-1 font-medium">{user.department}</dd>
+                <div className="text-right">
+                  <p className="text-sm text-slate-500">신뢰도</p>
+                  <p className="text-lg font-bold text-slate-900">{user.trustScore}</p>
                 </div>
-                <div>
-                  <dt className="text-slate-500">신뢰도</dt>
-                  <dd className="mt-1 font-medium">{user.trustScore}</dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-slate-500">가입일</dt>
-                  <dd className="mt-1 font-medium">{formatDate(user.createdAt)}</dd>
-                </div>
-              </dl>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-xs text-gray-400">가입일: {formatDate(user.createdAt)}</p>
+              </div>
             </section>
 
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               {/* Tab UI */}
-              <div className="flex gap-6 border-b border-slate-200">
+              <div className="flex gap-6 border-b border-gray-200">
                 <button
                   type="button"
                   onClick={() => handleTabChange("sales")}
-                  className={`pb-3 text-sm font-medium transition-colors ${
+                  className={`pb-3 text-sm font-semibold transition-colors relative ${
                     activeTab === "sales"
-                      ? "border-b-2 border-slate-900 text-slate-900"
+                      ? "text-slate-900"
                       : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
                   판매 내역
+                  {activeTab === "sales" && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900 rounded-full" />
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleTabChange("likes")}
-                  className={`pb-3 text-sm font-medium transition-colors ${
+                  className={`pb-3 text-sm font-semibold transition-colors relative ${
                     activeTab === "likes"
-                      ? "border-b-2 border-slate-900 text-slate-900"
+                      ? "text-slate-900"
                       : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
                   관심 목록 (찜)
+                  {activeTab === "likes" && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900 rounded-full" />
+                  )}
                 </button>
               </div>
 
@@ -227,25 +228,32 @@ export default function MyPage() {
                     return (
                       <div
                         key={product.id}
-                        className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg"
+                        className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                       >
                         <Link href={`/products/${product.id}`}>
-                          <div className="h-48 w-full overflow-hidden rounded-2xl bg-slate-200">
-                            <div
-                              className="h-full w-full bg-cover bg-center"
-                              style={{ backgroundImage: `url(${imageUrl})` }}
-                            />
+                          <div className="aspect-square w-full overflow-hidden rounded-2xl bg-gray-100">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={product.title}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                                <span className="text-sm">이미지 없음</span>
+                              </div>
+                            )}
                           </div>
                         </Link>
-                        <div className="space-y-2 p-4">
-                          <h2 className="line-clamp-1 text-[15px] font-semibold text-slate-900">
+                        <div className="space-y-3 p-4">
+                          <h2 className="line-clamp-1 text-base font-semibold text-slate-900">
                             {product.title}
                           </h2>
                           <p className="text-sm text-slate-500 before:mr-1 before:content-['👤']">
                             {product.sellerName}
                           </p>
                           <div className="flex items-center justify-between pt-1">
-                            <p className="text-2xl font-extrabold tracking-tight text-slate-900">
+                            <p className="text-lg font-extrabold tracking-tight text-slate-900">
                               ₩ {product.price.toLocaleString()}
                             </p>
                             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -260,7 +268,7 @@ export default function MyPage() {
                               {product.status === "SOLD_OUT" && "판매완료"}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3 pt-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-3 pt-1 text-xs text-gray-400">
                             <div className="flex items-center gap-1">
                               <Eye className="h-3.5 w-3.5" />
                               <span>{product.viewCount}</span>
@@ -274,7 +282,7 @@ export default function MyPage() {
                             <button
                               type="button"
                               onClick={() => handleToggleLike(product.id, product.isLiked)}
-                              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                              className="mt-2 w-full rounded-lg border border-gray-200 px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
                             >
                               찜 해제
                             </button>

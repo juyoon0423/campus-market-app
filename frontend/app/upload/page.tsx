@@ -28,7 +28,7 @@ export default function UploadPage() {
     }
   }, [isLoggedIn, isHydrated, router]);
 
-  const imageNames = useMemo(() => images.map((file) => file.name), [images]);
+  const imagePreviews = useMemo(() => images.map((file) => URL.createObjectURL(file)), [images]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const nextFiles = event.target.files ? Array.from(event.target.files) : [];
@@ -227,12 +227,18 @@ export default function UploadPage() {
               disabled={isSubmitting}
               className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-700 disabled:bg-slate-50"
             />
-            {imageNames.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-xs text-slate-500">
-                {imageNames.map((name) => (
-                  <li key={name}>{name}</li>
+            {imagePreviews.length > 0 ? (
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="aspect-square w-full overflow-hidden rounded-lg bg-gray-200">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                 ))}
-              </ul>
+              </div>
             ) : null}
           </div>
 

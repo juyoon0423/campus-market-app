@@ -9,22 +9,21 @@ import { getProduct, toggleLike } from "@/src/lib/apis/productApi";
 import { createOrGetChatRoom, getProductChatRooms } from "@/src/lib/apis/chatApi";
 import type { ProductDetailResponse, ProductStatus } from "@/src/types/product";
 import type { ChatRoomResponse } from "@/src/types/chat";
-import SellerProfile from "@/src/components/SellerProfile";
-
-const FALLBACK_IMAGE_URL = "/window.svg";
 
 function getImageUrl(imageUrls?: string[] | null) {
   const firstImage = imageUrls?.[0];
 
   if (!firstImage) {
-    return FALLBACK_IMAGE_URL;
+    return null;
   }
 
   if (firstImage.startsWith("http")) {
     return firstImage;
   }
 
-  return `http://localhost:8080/images/${firstImage}`;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const imagePath = firstImage.startsWith("/") ? firstImage : `/${firstImage}`;
+  return `${apiUrl}${imagePath}`;
 }
 
 export default function ProductDetailPage() {
@@ -356,12 +355,12 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-10">
-      <main className="mx-auto w-full max-w-4xl rounded-2xl bg-white p-6 shadow-sm md:p-8">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 px-4 py-10">
+      <main className="mx-auto w-full max-w-5xl">
+        <div className="mb-6 flex items-center justify-between">
           <Link
             href="/"
-            className="inline-block rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
           >
             목록으로 돌아가기
           </Link>
@@ -371,7 +370,7 @@ export default function ProductDetailPage() {
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors"
                 disabled={isStatusUpdating || isDeleting}
               >
                 <svg className="w-5 h-5 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
@@ -380,13 +379,13 @@ export default function ProductDetailPage() {
               </button>
               
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
                   {/* 판매완료 상품이 아닌 경우에만 수정 및 상태 변경 표시 */}
                   {product?.status !== "SOLD_OUT" && (
                     <>
                       <button
                         onClick={handleEditProduct}
-                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
                       >
                         상품 내용 수정하기
                       </button>
@@ -394,7 +393,7 @@ export default function ProductDetailPage() {
                         <button
                           onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
                           disabled={isStatusUpdating}
-                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
                         >
                           <span>{isStatusUpdating ? "상태 변경 중..." : "상품 상태 변경하기"}</span>
                           <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
@@ -403,7 +402,7 @@ export default function ProductDetailPage() {
                         </button>
                         
                         {isStatusDropdownOpen && (
-                          <div className="absolute left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                          <div className="absolute left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
                             <button
                               onClick={() => {
                                 handleStatusChange("SELLING");
@@ -412,8 +411,8 @@ export default function ProductDetailPage() {
                               disabled={isStatusUpdating || product?.status === "SELLING"}
                               className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                                 product?.status === "SELLING" 
-                                  ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
-                                  : "text-slate-700 hover:bg-slate-50"
+                                  ? "text-slate-400 bg-gray-50 cursor-not-allowed" 
+                                  : "text-slate-700 hover:bg-gray-50"
                               }`}
                             >
                               판매중 {product?.status === "SELLING" && "(현재)"}
@@ -426,8 +425,8 @@ export default function ProductDetailPage() {
                               disabled={isStatusUpdating || product?.status === "RESERVED"}
                               className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                                 product?.status === "RESERVED" 
-                                  ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
-                                  : "text-slate-700 hover:bg-slate-50"
+                                  ? "text-slate-400 bg-gray-50 cursor-not-allowed" 
+                                  : "text-slate-700 hover:bg-gray-50"
                               }`}
                             >
                               예약중 {product?.status === "RESERVED" && "(현재)"}
@@ -439,7 +438,7 @@ export default function ProductDetailPage() {
                                 loadChatRooms();
                               }}
                               disabled={isStatusUpdating}
-                              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
                             >
                               판매완료
                             </button>
@@ -463,95 +462,114 @@ export default function ProductDetailPage() {
           )}
         </div>
 
-        <h1 className="mt-5 text-2xl font-bold text-slate-900">{product.title}</h1>
-        
-        {/* 상태 변경 및 삭제 에러 메시지 */}
-        {(statusError || deleteError) && (
-          <div className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
-            {statusError || deleteError}
+        {/* 2-column layout for desktop */}
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* Left column: Image */}
+          <div className="space-y-4">
+            <div className="aspect-square w-full overflow-hidden rounded-2xl bg-gray-100">
+              {getImageUrl(product.imageUrls) ? (
+                <img
+                  src={getImageUrl(product.imageUrls)!}
+                  alt={product.title}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                  <span className="text-sm">이미지 없음</span>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        
-        {/* 판매자 프로필 컴포넌트 */}
-        <div className="mt-4">
-          <SellerProfile sellerId={product?.sellerId || 0} sellerName={product?.sellerName || ""} />
-        </div>
-        
-        {/* 가격과 상태 표시 */}
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-2xl font-bold text-slate-900">
-            {product.price.toLocaleString()}원
-          </p>
-          <div className="flex items-center gap-3">
-            <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${
-              product?.status === "SELLING"
-                ? "bg-green-100 text-green-800"
-                : product?.status === "RESERVED"
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-gray-100 text-gray-800"
-            }`}>
-              {product?.status === "SELLING" && "판매중"}
-              {product?.status === "RESERVED" && "예약중"}
-              {product?.status === "SOLD_OUT" && "판매완료"}
-            </span>
-            <button
-              type="button"
-              onClick={handleToggleLike}
-              disabled={isLiking || isSeller}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white transition-colors hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={product.isLiked ? "찜 취소" : "찜하기"}
-            >
-              <Heart
-                className={`h-5 w-5 ${product.isLiked ? "fill-red-500 text-red-500" : "text-gray-400"}`}
-              />
-            </button>
-          </div>
-        </div>
 
-        {/* 조회수와 좋아요 수 표시 */}
-        <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
-          <div className="flex items-center gap-1.5">
-            <Eye className="h-4 w-4" />
-            <span>조회 {product.viewCount}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Heart className="h-4 w-4" />
-            <span>찜 {product.likeCount}</span>
+          {/* Right column: Product info */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">{product.title}</h1>
+              
+              {/* 상태 변경 및 삭제 에러 메시지 */}
+              {(statusError || deleteError) && (
+                <div className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+                  {statusError || deleteError}
+                </div>
+              )}
+            </div>
+
+            <div className="border-b border-gray-200 pb-6">
+              {/* 가격과 상태 표시 */}
+              <div className="flex items-center justify-between">
+                <p className="text-3xl font-extrabold text-slate-900">
+                  {product.price.toLocaleString()}원
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${
+                    product?.status === "SELLING"
+                      ? "bg-green-100 text-green-800"
+                      : product?.status === "RESERVED"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}>
+                    {product?.status === "SELLING" && "판매중"}
+                    {product?.status === "RESERVED" && "예약중"}
+                    {product?.status === "SOLD_OUT" && "판매완료"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleLike}
+                    disabled={isLiking || isSeller}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={product.isLiked ? "찜 취소" : "찜하기"}
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${product.isLiked ? "fill-red-500 text-red-500" : "text-gray-400"}`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* 조회수와 좋아요 수 표시 */}
+              <div className="mt-3 flex items-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-1.5">
+                  <Eye className="h-4 w-4" />
+                  <span>조회 {product.viewCount}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Heart className="h-4 w-4" />
+                  <span>찜 {product.likeCount}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-b border-gray-200 pb-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-3">상품 설명</h2>
+              <p className="whitespace-pre-wrap text-slate-700 text-sm leading-relaxed">
+                {product.description}
+              </p>
+            </div>
+
+            {/* 채팅 문의하기 버튼 (판매자가 아닌 경우) */}
+            {isHydrated && (
+              isLoggedIn ? (
+                !isSeller && (
+                  <button
+                    type="button"
+                    onClick={handleInitiateChat}
+                    disabled={isChatLoading}
+                    className="w-full rounded-xl bg-slate-900 px-6 py-4 text-base font-semibold text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isChatLoading ? "채팅방 생성 중..." : "채팅 문의하기"}
+                  </button>
+                )
+              ) : (
+                <Link
+                  href="/login"
+                  className="block w-full rounded-xl bg-slate-900 px-6 py-4 text-center text-base font-semibold text-white hover:bg-slate-800 transition-colors"
+                >
+                  채팅 문의하기
+                </Link>
+              )
+            )}
           </div>
         </div>
-        <p className="mt-6 whitespace-pre-wrap text-slate-700">
-          {product.description}
-        </p>
-
-        <section className="mt-8">
-          <div
-            className="h-72 rounded-xl bg-slate-200 bg-cover bg-center"
-            style={{ backgroundImage: `url(${getImageUrl(product.imageUrls)})` }}
-          />
-        </section>
-
-        {/* 채팅 문의하기 버튼 (판매자가 아닌 경우) */}
-        {isHydrated && (
-          isLoggedIn ? (
-            !isSeller && (
-              <button
-                type="button"
-                onClick={handleInitiateChat}
-                disabled={isChatLoading}
-                className="mt-8 w-full rounded-lg bg-slate-900 px-4 py-3 text-sm text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isChatLoading ? "채팅방 생성 중..." : "채팅 문의하기"}
-              </button>
-            )
-          ) : (
-            <Link
-              href="/login"
-              className="mt-8 inline-block w-full rounded-lg bg-slate-900 px-4 py-3 text-sm text-center text-white hover:bg-slate-700"
-            >
-              채팅 문의하기
-            </Link>
-          )
-        )}
       </main>
       {/* SOLD_OUT 모달 */}
       {isSoldOutModalOpen && (
