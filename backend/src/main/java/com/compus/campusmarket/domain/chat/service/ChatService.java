@@ -2,6 +2,7 @@ package com.compus.campusmarket.domain.chat.service;
 
 import com.compus.campusmarket.domain.chat.dto.ChatMessageRequest;
 import com.compus.campusmarket.domain.chat.dto.ChatMessageResponse;
+import com.compus.campusmarket.domain.chat.dto.ChatRoomResponse;
 import com.compus.campusmarket.domain.chat.entity.ChatMessage;
 import com.compus.campusmarket.domain.chat.entity.ChatRoom;
 import com.compus.campusmarket.domain.chat.repository.ChatMessageRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,37 +29,34 @@ public class ChatService {
     private final UserRepository userRepository;
 
     @Transactional
-    public ChatRoom createOrGetRoom(Long productId, Long buyerId) {
-        // 1. 상품 존재 확인
+    public ChatRoomResponse createOrGetRoom(Long productId, Long buyerId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("상품이 존재하지 않습니다."));
 
-        // 2. 본인 상품 체크
         if (product.getSeller().getId().equals(buyerId)) {
             throw new IllegalStateException("본인 상품에는 채팅을 시작할 수 없습니다.");
         }
 
-        // 3. 기존 채팅방 조회 (리스트로)
         List<ChatRoom> existingRooms = chatRoomRepository.findByProductIdAndBuyerId(productId, buyerId);
+        ChatRoom room;
 
-        // 4. 기존 방이 있으면 첫 번째 방 반환
         if (!existingRooms.isEmpty()) {
-            return existingRooms.get(0);
+            room = existingRooms.get(0);
+        } else {
+            User buyer = userRepository.findById(buyerId)
+                    .orElseThrow(() -> new IllegalArgumentException("구매자 정보가 올바르지 않습니다."));
+            ChatRoom newRoom = ChatRoom.builder()
+                    .product(product)
+                    .seller(product.getSeller())
+                    .buyer(buyer)
+                    .build();
+            room = chatRoomRepository.save(newRoom);
         }
 
-        // 5. 새로운 채팅방 생성
-        User buyer = userRepository.findById(buyerId)
-                .orElseThrow(() -> new IllegalArgumentException("구매자 정보가 올바르지 않습니다."));
-
-        ChatRoom newRoom = ChatRoom.builder()
-                .product(product)
-                .seller(product.getSeller())
-                .buyer(buyer)
-                .build();
-
-        return chatRoomRepository.save(newRoom);
+        String lastMessage = getLastMessage(room.getId());
+        // 서비스에서 DTO로 변환해서 반환
+        return new ChatRoomResponse(room, buyerId, lastMessage);
     }
-
     @Transactional
     public ChatMessageResponse saveMessage(ChatMessageRequest request) {
         ChatRoom room = chatRoomRepository.findById(request.getRoomId())
@@ -72,12 +71,22 @@ public class ChatService {
         return new ChatMessageResponse(chatMessageRepository.save(message));
     }
 
-    public List<ChatRoom> findAllRooms(Long userId) {
-        return chatRoomRepository.findAllBySellerIdOrBuyerId(userId, userId);
+    // 🚨 핵심: 리스트 조회를 서비스에서 DTO로 변환
+    public List<ChatRoomResponse> findAllRooms(Long userId) {
+        List<ChatRoom> rooms = chatRoomRepository.findAllBySellerIdOrBuyerId(userId, userId);
+        return rooms.stream()
+                .map(room -> {
+                    String lastMessage = getLastMessage(room.getId());
+                    return new ChatRoomResponse(room, userId, lastMessage);
+                })
+                .collect(Collectors.toList());
     }
 
-    public List<ChatMessage> findMessagesByRoomId(Long roomId) {
-        return chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAsc(roomId);
+    public List<ChatMessageResponse> findMessagesByRoomId(Long roomId) {
+        return chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAsc(roomId)
+                .stream()
+                .map(ChatMessageResponse::new)
+                .collect(Collectors.toList());
     }
 
     // 마지막 메시지 조회 메서드 추가
@@ -86,7 +95,13 @@ public class ChatService {
     }
 
     // ChatService에 추가
-    public List<ChatRoom> findRoomsByProductId(Long productId, Long currentUserId) {
-        return chatRoomRepository.findByProductIdAndUserId(productId, currentUserId);
+    public List<ChatRoomResponse> findRoomsByProductId(Long productId, Long currentUserId) {
+        List<ChatRoom> rooms = chatRoomRepository.findByProductIdAndUserId(productId, currentUserId);
+        return rooms.stream()
+                .map(room -> {
+                    String lastMessage = getLastMessage(room.getId());
+                    return new ChatRoomResponse(room, currentUserId, lastMessage);
+                })
+                .collect(Collectors.toList());
     }
 }

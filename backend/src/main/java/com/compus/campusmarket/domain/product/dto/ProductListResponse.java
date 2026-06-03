@@ -36,6 +36,6 @@ public class ProductListResponse {
         this.likeCount = product.getLikeCount();
         this.isLiked = isLiked;
         this.representativeImageUrl = product.getImages().isEmpty() ?
-                null : product.getImages().get(0).getImageUrl();
+                null : "/images/" + product.getImages().get(0).getImageUrl();
     }
 }

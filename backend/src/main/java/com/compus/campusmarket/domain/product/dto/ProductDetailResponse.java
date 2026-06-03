@@ -39,7 +39,7 @@ public class ProductDetailResponse {
         this.likeCount = product.getLikeCount();
         this.isLiked = isLiked;
         this.imageUrls = product.getImages().stream()
-                .map(ProductImage::getImageUrl)
+                .map(image -> "/images/" + image.getImageUrl())
                 .collect(Collectors.toList());
     }
 }

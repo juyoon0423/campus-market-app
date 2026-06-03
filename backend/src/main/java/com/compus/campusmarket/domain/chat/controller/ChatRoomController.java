@@ -27,9 +27,9 @@ public class ChatRoomController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long currentUserId = userDetails.getUserId();
-        ChatRoom room = chatService.createOrGetRoom(productId, currentUserId);
-        String lastMessage = chatService.getLastMessage(room.getId());
-        return ResponseEntity.ok(new ChatRoomResponse(room, currentUserId, lastMessage));
+        // 서비스가 DTO를 주므로 그대로 리턴!
+        ChatRoomResponse response = chatService.createOrGetRoom(productId, currentUserId);
+        return ResponseEntity.ok(response);
     }
 
     // 내 채팅방 리스트 조회
@@ -38,25 +38,16 @@ public class ChatRoomController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long currentUserId = userDetails.getUserId();
-        List<ChatRoom> rooms = chatService.findAllRooms(currentUserId);
-
-        List<ChatRoomResponse> responses = rooms.stream()
-                .map(room -> {
-                    String lastMessage = chatService.getLastMessage(room.getId());
-                    return new ChatRoomResponse(room, currentUserId, lastMessage);
-                })
-                .collect(Collectors.toList());
-
+        // 서비스가 DTO 리스트를 주므로 그대로 리턴!
+        List<ChatRoomResponse> responses = chatService.findAllRooms(currentUserId);
         return ResponseEntity.ok(responses);
     }
 
     // 채팅방 메시지 내역 조회
     @GetMapping("/room/{roomId}/messages")
     public ResponseEntity<List<ChatMessageResponse>> getRoomMessages(@PathVariable Long roomId) {
-        List<ChatMessageResponse> responses = chatService.findMessagesByRoomId(roomId)
-                .stream()
-                .map(ChatMessageResponse::new)
-                .collect(Collectors.toList());
+        // 서비스가 DTO 리스트를 주므로 그대로 리턴!
+        List<ChatMessageResponse> responses = chatService.findMessagesByRoomId(roomId);
         return ResponseEntity.ok(responses);
     }
 
@@ -67,15 +58,8 @@ public class ChatRoomController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long currentUserId = userDetails.getUserId();
-        List<ChatRoom> rooms = chatService.findRoomsByProductId(productId, currentUserId);
-
-        List<ChatRoomResponse> responses = rooms.stream()
-                .map(room -> {
-                    String lastMessage = chatService.getLastMessage(room.getId());
-                    return new ChatRoomResponse(room, currentUserId, lastMessage);
-                })
-                .collect(Collectors.toList());
-
+        // 서비스가 DTO 리스트를 주므로 그대로 리턴!
+        List<ChatRoomResponse> responses = chatService.findRoomsByProductId(productId, currentUserId);
         return ResponseEntity.ok(responses);
     }
 }
