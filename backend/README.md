@@ -87,30 +87,34 @@
 ---
 
 
-
 ## ✨ Key Features
 
+### 🔐 OAuth2 & JWT Auth
+- Spring Security 기반 카카오 소셜 로그인 구현
+- JWT 기반 Stateless 인증 구조 설계
 
+### ✉️ 대학 이메일 인증
+- JavaMailSender 기반 이메일 인증 시스템 구현
+- 특정 학교 도메인 검증 로직 적용
 
-| 기능                          | 기술적 포인트                                                                              |
+### 🤖 AI 지능형 서비스
+- Gemini API 연동
+- 판매글 자동 생성 및 게시글 필터링 기능 구현
 
-| :-------------------------- | :----------------------------------------------------------------------------------- |
+### 🖼️ Image & Product API
+- Multipart 기반 이미지 업로드 및 수정 처리
 
-| **🔐 OAuth2 & JWT Auth**    | Spring Security 기반 카카오 소셜 로그인 구현 및 자체 JWT 발급을 통한 Stateless 인증 인가 로직 고도화              |
+### ❤️ 찜하기 & 조회수
+- DTO 기반 응답 설계
+- 사용자별 isLiked 상태 관리
+- 조회 성능 최적화
 
-| **✉️ 대학 이메일 인증**            | `JavaMailSender`를 활용한 특정 도메인(`@sj.sangji.ac.kr`) 전용 6자리 인증번호 발송 및 메모리 기반 상태 검증 로직 구현 |
+### 💬 Real-time Chat
+- Spring WebSocket & STOMP 기반 실시간 채팅
 
-| **🤖 AI 지능형 서비스**           | `RestClient`를 활용한 Gemini API 연동. 판매글 자동 생성 및 부적절 게시글 필터링 기능 구현                       |
-
-| **🖼️ Image & Product API** | `@RequestPart` 활용 및 Multipart 기반 이미지 추가·수정·삭제 처리                                     |
-
-| **❤️ 찜하기 & 조회수**            | DTO 기반 응답 설계, 사용자별 `isLiked` 상태 관리 및 조회 최적화                                          |
-
-| **💬 Real-time Chat**       | Spring WebSocket & STOMP 프로토콜을 활용한 실시간 양방향 채팅 시스템 구축                                 |
-
-| **🛡️ Security Config**     | CORS 설정 통합 관리, HTTP Method별 세밀한 권한 제어 및 `AuthenticationEntryPoint` 커스텀 처리            |
-
-
+### 🛡️ Security Config
+- CORS 정책 관리
+- HTTP Method별 권한 제어
 
 ---
 
@@ -300,22 +304,16 @@ gemini:
 
 ## 🔗 Related Links
 
+### Frontend Repository
 
+- GitHub
+  - https://github.com/juyoon0423/campus-market-frontend
 
-본 백엔드 서버와 연동하여 동작하는 **프론트엔드(Next.js)** 소스코드 레포지토리입니다.
-
-
-
-| 프로젝트                       | 레포지토리 링크                                             | 기술 스택                              |
-
-| :------------------------- | :--------------------------------------------------- | :--------------------------------- |
-
-| **Campus Market Frontend** | https://github.com/juyoon0423/campus-market-frontend | `Next.js`, `Tailwind CSS`, `Axios` |
-
-
-
+- Tech Stack
+  - Next.js
+  - Tailwind CSS
+  - Axios
 ---
-
 
 
 <p align="center">
