@@ -4,8 +4,15 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "@/src/context/AuthContext";
-import { getProduct, updateProduct, generateDescription } from "@/src/lib/apis/productApi";
-import type { ProductDetailResponse, ProductUpdateRequest } from "@/src/types/product";
+import {
+  getProduct,
+  updateProduct,
+  generateDescription,
+} from "@/src/lib/apis/productApi";
+import type {
+  ProductDetailResponse,
+  ProductUpdateRequest,
+} from "@/src/types/product";
 import { AxiosError } from "axios";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
@@ -19,7 +26,9 @@ function getImageUrl(imageUrl?: string) {
     return imageUrl;
   }
 
-  return `http://localhost:8080/images/${imageUrl}`;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const imagePath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  return `${apiUrl}${imagePath}`;
 }
 
 export default function ProductEditPage() {
@@ -28,13 +37,13 @@ export default function ProductEditPage() {
   const productId = Number(params.id);
   const isInvalidProductId = Number.isNaN(productId);
   const { isLoggedIn } = useAuth();
-  
+
   const [product, setProduct] = useState<ProductDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
-  
+
   const [formData, setFormData] = useState<ProductUpdateRequest>({
     title: "",
     description: "",
@@ -42,16 +51,11 @@ export default function ProductEditPage() {
     category: "",
     remainingImageUrls: [],
   });
-  
+
   const [remainingImageUrls, setRemainingImageUrls] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
 
-  const categoryOptions = [
-    "학업 관련",
-    "디지털/가전", 
-    "생활/자취",
-    "기타"
-  ];
+  const categoryOptions = ["학업 관련", "디지털/가전", "생활/자취", "기타"];
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -68,15 +72,15 @@ export default function ProductEditPage() {
     const fetchProduct = async () => {
       try {
         const response = await getProduct(productId);
-        
+
         // 판매자 권한 확인
-        const token = localStorage.getItem('accessToken');
+        const token = localStorage.getItem("accessToken");
         if (token) {
-          const payload = token.split('.')[1];
+          const payload = token.split(".")[1];
           if (payload) {
             const decoded = JSON.parse(atob(payload));
-            const currentUserId = Number(decoded.userId || decoded.sub || null);  // ⚠️ 숫자로 변환
-            
+            const currentUserId = Number(decoded.userId || decoded.sub || null); // ⚠️ 숫자로 변환
+
             if (currentUserId !== response.sellerId) {
               setErrorMessage("상품을 수정할 권한이 없습니다.");
               setIsLoading(false);
@@ -84,7 +88,7 @@ export default function ProductEditPage() {
             }
           }
         }
-        
+
         setProduct(response);
         setFormData({
           title: response.title,
@@ -106,8 +110,13 @@ export default function ProductEditPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.title.trim() || !formData.description.trim() || formData.price <= 0 || !formData.category) {
+
+    if (
+      !formData.title.trim() ||
+      !formData.description.trim() ||
+      formData.price <= 0 ||
+      !formData.category
+    ) {
       setErrorMessage("모든 필드를 올바르게 입력해주세요.");
       return;
     }
@@ -123,7 +132,7 @@ export default function ProductEditPage() {
         category: formData.category,
         remainingImageUrls: remainingImageUrls,
       };
-      
+
       await updateProduct(productId, updateRequest, newImages);
       alert("상품이 성공적으로 수정되었습니다.");
       router.push(`/products/${productId}`);
@@ -149,15 +158,18 @@ export default function ProductEditPage() {
     }
   };
 
-  const handleInputChange = (field: keyof ProductUpdateRequest, value: string | number) => {
-    setFormData(prev => ({
+  const handleInputChange = (
+    field: keyof ProductUpdateRequest,
+    value: string | number,
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleRemoveExistingImage = (imageUrl: string) => {
-    setRemainingImageUrls(prev => prev.filter(url => url !== imageUrl));
+    setRemainingImageUrls((prev) => prev.filter((url) => url !== imageUrl));
   };
 
   const handleAddNewImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,11 +177,11 @@ export default function ProductEditPage() {
     if (!files) return;
 
     const newImageFiles = Array.from(files);
-    setNewImages(prev => [...prev, ...newImageFiles]);
+    setNewImages((prev) => [...prev, ...newImageFiles]);
   };
 
   const handleRemoveNewImage = (index: number) => {
-    setNewImages(prev => prev.filter((_, i) => i !== index));
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleGenerateDescription = async () => {
@@ -182,10 +194,13 @@ export default function ProductEditPage() {
     setErrorMessage("");
 
     try {
-      const generatedDescription = await generateDescription(formData.title, formData.category);
-      setFormData(prev => ({
+      const generatedDescription = await generateDescription(
+        formData.title,
+        formData.category,
+      );
+      setFormData((prev) => ({
         ...prev,
-        description: generatedDescription
+        description: generatedDescription,
       }));
     } catch (error) {
       console.error("Generate description error:", error);
@@ -244,7 +259,10 @@ export default function ProductEditPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="title" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="title"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               상품 제목 *
             </label>
             <input
@@ -259,7 +277,10 @@ export default function ProductEditPage() {
           </div>
 
           <div>
-            <label htmlFor="category" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="category"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               카테고리 *
             </label>
             <select
@@ -279,14 +300,19 @@ export default function ProductEditPage() {
           </div>
 
           <div>
-            <label htmlFor="price" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="price"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               가격 *
             </label>
             <input
               id="price"
               type="number"
               value={formData.price}
-              onChange={(e) => handleInputChange("price", Number(e.target.value))}
+              onChange={(e) =>
+                handleInputChange("price", Number(e.target.value))
+              }
               className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500"
               placeholder="0"
               min="0"
@@ -297,7 +323,10 @@ export default function ProductEditPage() {
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label htmlFor="description" className="block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-slate-700"
+              >
                 상품 설명 *
               </label>
               <button
@@ -351,7 +380,10 @@ export default function ProductEditPage() {
           </div>
 
           <div>
-            <label htmlFor="newImages" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="newImages"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               새 이미지 추가
             </label>
             <input
