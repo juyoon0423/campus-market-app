@@ -110,13 +110,15 @@ public class ProductService {
         product.update(request.getTitle(), request.getDescription(), request.getPrice(), request.getCategory());
 
         // 3. 기존 이미지 정리 로직
-        // 프론트에서 넘어온 '남길 이미지(remainingImageUrls)'에 포함되지 않은 이미지는 삭제
         if (request.getRemainingImageUrls() != null) {
-            product.getImages().removeIf(productImage ->
-                    !request.getRemainingImageUrls().contains(productImage.getImageUrl())
-            );
+            product.getImages().removeIf(productImage -> {
+                String dbFileName = productImage.getImageUrl(); // 예: UUID_test.jpg
+
+                // 프론트에서 보낸 URL 목록 중, DB 파일명을 포함하는 게 하나도 없다면 삭제
+                return !request.getRemainingImageUrls().stream()
+                        .anyMatch(remainingUrl -> remainingUrl.contains(dbFileName));
+            });
         } else {
-            // remainingImageUrls가 null로 넘어오면 모두 삭제로 간주
             product.getImages().clear();
         }
 
