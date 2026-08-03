@@ -1,0 +1,88 @@
+package com.compus.campusmarket.domain.chat.service;
+
+import com.compus.campusmarket.domain.chat.dto.ChatRoomResponse;
+import com.compus.campusmarket.domain.chat.entity.ChatMessage;
+import com.compus.campusmarket.domain.chat.entity.ChatRoom;
+import com.compus.campusmarket.domain.chat.repository.ChatMessageRepository;
+import com.compus.campusmarket.domain.chat.repository.ChatRoomRepository;
+import com.compus.campusmarket.domain.product.entity.Product;
+import com.compus.campusmarket.domain.product.repository.ProductRepository;
+import com.compus.campusmarket.domain.user.entity.User;
+import com.compus.campusmarket.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+// 방마다 반복 쿼리를 날리던 걸 단일 배치 쿼리(findLastMessagesByRoomIds)로 바꾼 뒤,
+// 방마다 정확히 자기 자신의 마지막 메시지에 매핑되는지(다른 방 메시지가 섞이지 않는지) 검증한다.
+@SpringBootTest
+class ChatServiceTest {
+
+    @Autowired
+    private ChatService chatService;
+    @Autowired
+    private ChatRoomRepository chatRoomRepository;
+    @Autowired
+    private ChatMessageRepository chatMessageRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private UserRepository userRepository;
+
+    private User seller;
+    private User buyer;
+    private Product product1;
+    private Product product2;
+    private ChatRoom room1;
+    private ChatRoom room2;
+
+    private void setUp() {
+        seller = userRepository.save(newUser("seller"));
+        buyer = userRepository.save(newUser("buyer"));
+        product1 = productRepository.save(Product.create("상품1", "설명", 1000L, seller, "카테고리"));
+        product2 = productRepository.save(Product.create("상품2", "설명", 2000L, seller, "카테고리"));
+        room1 = chatRoomRepository.save(ChatRoom.builder().product(product1).seller(seller).buyer(buyer).build());
+        room2 = chatRoomRepository.save(ChatRoom.builder().product(product2).seller(seller).buyer(buyer).build());
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (room1 != null) chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAsc(room1.getId())
+                .forEach(chatMessageRepository::delete);
+        if (room2 != null) chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAsc(room2.getId())
+                .forEach(chatMessageRepository::delete);
+        if (room1 != null) chatRoomRepository.deleteById(room1.getId());
+        if (room2 != null) chatRoomRepository.deleteById(room2.getId());
+        if (product1 != null) productRepository.deleteById(product1.getId());
+        if (product2 != null) productRepository.deleteById(product2.getId());
+        if (seller != null) userRepository.deleteById(seller.getId());
+        if (buyer != null) userRepository.deleteById(buyer.getId());
+    }
+
+    @Test
+    void findAllRooms_각_방은_자기_자신의_마지막_메시지만_반환해야_한다() {
+        setUp();
+        chatMessageRepository.save(ChatMessage.builder().chatRoom(room1).senderId(buyer.getId()).message("room1-old").build());
+        chatMessageRepository.save(ChatMessage.builder().chatRoom(room1).senderId(buyer.getId()).message("room1-new").build());
+        chatMessageRepository.save(ChatMessage.builder().chatRoom(room2).senderId(buyer.getId()).message("room2-only").build());
+
+        List<ChatRoomResponse> responses = chatService.findAllRooms(buyer.getId());
+
+        ChatRoomResponse room1Response = responses.stream().filter(r -> r.getId().equals(room1.getId())).findFirst().orElseThrow();
+        ChatRoomResponse room2Response = responses.stream().filter(r -> r.getId().equals(room2.getId())).findFirst().orElseThrow();
+
+        assertThat(room1Response.getLastMessage()).isEqualTo("room1-new");
+        assertThat(room2Response.getLastMessage()).isEqualTo("room2-only");
+    }
+
+    private User newUser(String tag) {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        return User.create(tag + "-" + suffix + "@test.campusmarket.com", tag, "S-" + suffix, "테스트학과", "password");
+    }
+}

@@ -166,9 +166,10 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    // completeTrade와 같은 이유(동시 상태 변경 요청)로 비관적 락을 재사용한다.
     @Transactional
     public void updateStatus(Long productId, Long userId, ProductStatus status) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
         product.changeStatus(status, userId);
     }

@@ -3,7 +3,7 @@ package com.compus.campusmarket.global.util;
 import com.compus.campusmarket.global.config.auth.CustomUserDetailsService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,13 +14,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
-@RequiredArgsConstructor
 public class JwtTokenProvider {
 
     private final CustomUserDetailsService userDetailsService;
-    private final String secretString = "your-very-secret-key-at-least-32-characters-long-campus-market!!";
-    private final SecretKey key = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
+    private final SecretKey key;
     private final long expirationTime = 3600000; // 1시간
+
+    public JwtTokenProvider(CustomUserDetailsService userDetailsService,
+                             @Value("${jwt.secret}") String secret) {
+        this.userDetailsService = userDetailsService;
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String createToken(Long userId) {
         Date now = new Date();

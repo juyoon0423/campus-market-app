@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Slf4j
 @SpringBootTest
@@ -164,6 +165,21 @@ class ProductConcurrencyTest {
 
         assertThat(optimisticActualRows).isEqualTo(concurrency);
         assertThat(pessimisticActualRows).isEqualTo(concurrency);
+    }
+
+    @Test
+    @DisplayName("거래완료된 상품은 updateStatus로도 되돌릴 수 없어야 한다")
+    void updateStatus_afterCompleteTrade_shouldBeRejected() {
+        User buyer = userRepository.save(newUser("buyer"));
+        createdUserIds.add(buyer.getId());
+
+        productService.completeTrade(productId, sellerId, buyer.getId());
+
+        assertThatThrownBy(() -> productService.updateStatus(productId, sellerId, ProductStatus.SELLING))
+                .isInstanceOf(IllegalStateException.class);
+
+        Product reloaded = productRepository.findById(productId).orElseThrow();
+        assertThat(reloaded.getStatus()).isEqualTo(ProductStatus.SOLD_OUT);
     }
 
     private List<Long> createLikers(int count, String tagPrefix) {

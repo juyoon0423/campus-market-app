@@ -15,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,12 +76,22 @@ public class ChatService {
     // 🚨 핵심: 리스트 조회를 서비스에서 DTO로 변환
     public List<ChatRoomResponse> findAllRooms(Long userId) {
         List<ChatRoom> rooms = chatRoomRepository.findAllBySellerIdOrBuyerId(userId, userId);
+        Map<Long, String> lastMessages = findLastMessages(rooms);
         return rooms.stream()
-                .map(room -> {
-                    String lastMessage = getLastMessage(room.getId());
-                    return new ChatRoomResponse(room, userId, lastMessage);
-                })
+                .map(room -> new ChatRoomResponse(room, userId, lastMessages.get(room.getId())))
                 .collect(Collectors.toList());
+    }
+
+    // 방 개수만큼 getLastMessage를 반복 호출하던 N+1을 없애고 단일 쿼리로 방별 마지막 메시지를 가져온다.
+    private Map<Long, String> findLastMessages(List<ChatRoom> rooms) {
+        if (rooms.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Long> roomIds = rooms.stream().map(ChatRoom::getId).collect(Collectors.toList());
+        return chatMessageRepository.findLastMessagesByRoomIds(roomIds).stream()
+                .collect(Collectors.toMap(
+                        ChatMessageRepository.LastMessageRow::getRoomId,
+                        ChatMessageRepository.LastMessageRow::getMessage));
     }
 
     public List<ChatMessageResponse> findMessagesByRoomId(Long roomId) {
@@ -97,11 +109,9 @@ public class ChatService {
     // ChatService에 추가
     public List<ChatRoomResponse> findRoomsByProductId(Long productId, Long currentUserId) {
         List<ChatRoom> rooms = chatRoomRepository.findByProductIdAndUserId(productId, currentUserId);
+        Map<Long, String> lastMessages = findLastMessages(rooms);
         return rooms.stream()
-                .map(room -> {
-                    String lastMessage = getLastMessage(room.getId());
-                    return new ChatRoomResponse(room, currentUserId, lastMessage);
-                })
+                .map(room -> new ChatRoomResponse(room, currentUserId, lastMessages.get(room.getId())))
                 .collect(Collectors.toList());
     }
 }

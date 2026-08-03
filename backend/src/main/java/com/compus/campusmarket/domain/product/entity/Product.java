@@ -79,6 +79,9 @@ public class Product extends BaseTimeEntity {
 
     public void changeStatus(ProductStatus newStatus, Long userId) {
         validateSeller(userId);
+        if (this.status == ProductStatus.SOLD_OUT) {
+            throw new IllegalStateException("이미 거래가 완료된 상품은 상태를 변경할 수 없습니다.");
+        }
         this.status = newStatus;
     }
 
