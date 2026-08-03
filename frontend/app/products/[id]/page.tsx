@@ -1,0 +1,633 @@
+"use client";
+
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { Eye, Heart } from "lucide-react";
+import { useAuth } from "@/src/context/AuthContext";
+import { getProduct, toggleLike } from "@/src/lib/apis/productApi";
+import { createOrGetChatRoom, getProductChatRooms } from "@/src/lib/apis/chatApi";
+import type { ProductDetailResponse, ProductStatus } from "@/src/types/product";
+import type { ChatRoomResponse } from "@/src/types/chat";
+
+function getImageUrl(imageUrls?: string[] | null) {
+  const firstImage = imageUrls?.[0];
+
+  if (!firstImage) {
+    return null;
+  }
+
+  if (firstImage.startsWith("http")) {
+    return firstImage;
+  }
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const imagePath = firstImage.startsWith("/") ? firstImage : `/${firstImage}`;
+  return `${apiUrl}${imagePath}`;
+}
+
+export default function ProductDetailPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const productId = Number(params.id);
+  const isInvalidProductId = Number.isNaN(productId);
+  const { isLoggedIn, isHydrated } = useAuth();
+  const [product, setProduct] = useState<ProductDetailResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+  const [statusError, setStatusError] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [isSoldOutModalOpen, setIsSoldOutModalOpen] = useState(false);
+  const [buyerId, setBuyerId] = useState("");
+  const [chatRooms, setChatRooms] = useState<ChatRoomResponse[]>([]);
+  const [isLoadingChatRooms, setIsLoadingChatRooms] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [isLiking, setIsLiking] = useState(false);
+  const hasFetchedProduct = useRef(false);
+
+  // 현재 사용자가 판매자인지 확인
+  const getUserIdFromToken = (token: string | null): number | null => {
+    if (!token) return null;
+    try {
+      const payload = token.split('.')[1];
+      if (!payload) return null;
+      const decoded = JSON.parse(atob(payload));
+      console.log("JWT 디코딩 결과:", decoded);  // 디버깅용
+      const userId = decoded.userId || decoded.sub || null;
+      return userId ? Number(userId) : null;  // ⚠️ 숫자로 변환
+    } catch (error) {
+      console.error('JWT decode error:', error);
+      return null;
+    }
+  };
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const currentUserId = getUserIdFromToken(token);
+  const isSeller = !!(currentUserId && product?.sellerId === currentUserId);
+
+  // 판매자 인식 디버깅 로그
+  console.log("=== 판매자 인식 디버깅 ===");
+  console.log("1. 기본 정보:", {
+    isLoggedIn,
+    isHydrated,
+    token: token ? "있음" : "없음",
+    currentUserId,
+    productId
+  });
+  console.log("2. 상품 정보:", {
+    productExists: !!product,
+    productTitle: product?.title,
+    sellerId: product?.sellerId,
+    sellerName: product?.sellerName
+  });
+  console.log("3. 판매자 확인:", {
+    isSeller,
+    comparison: `currentUserId(${currentUserId}) === sellerId(${product?.sellerId})`,
+    shouldShowDropdown: isHydrated && isLoggedIn && isSeller
+  });
+
+  useEffect(() => {
+    if (isInvalidProductId) {
+      return;
+    }
+
+    // Prevent duplicate API calls (React Strict Mode)
+    if (hasFetchedProduct.current) {
+      return;
+    }
+
+    const fetchProduct = async () => {
+      try {
+        const response = await getProduct(productId);
+        setProduct(response);
+      } catch {
+        setErrorMessage("상품 상세 정보를 불러오지 못했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProduct();
+    hasFetchedProduct.current = true;
+  }, [productId, isInvalidProductId]);
+
+  const handleInitiateChat = async () => {
+    if (!isLoggedIn || isChatLoading) {
+      return;
+    }
+
+    setIsChatLoading(true);
+    try {
+      const room = await createOrGetChatRoom(productId);
+      router.push(`/chat?roomId=${room.id}`);
+    } catch {
+      alert("채팅방을 생성할 수 없습니다.");
+      setIsChatLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus: ProductStatus, buyerId?: number) => {
+    if (!product || !product.id) {
+      setStatusError("상품 정보가 없습니다.");
+      return;
+    }
+
+    console.log("Status Change - Starting:", {
+      productId: product.id,
+      currentStatus: product.status,
+      newStatus,
+      currentUserId
+    });
+
+    setIsStatusUpdating(true);
+    setStatusError("");
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setStatusError("로그인이 필요합니다.");
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8080/api/products/${product.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          buyerId: buyerId || null  // SOLD_OUT일 때만 buyerId 전달
+        }),
+      });
+
+      console.log("Status Change - Response:", response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Status Change - Error:", errorText);
+        
+        if (response.status === 403) {
+          setStatusError("상품 상태를 변경할 권한이 없습니다.");
+        } else if (response.status === 400) {
+          setStatusError("요청 형식이 올바르지 않습니다.");
+        } else {
+          setStatusError(`상태 변경에 실패했습니다 (${response.status}).`);
+        }
+        return;
+      }
+
+      // 상품 정보 새로고침
+      const updatedProduct = await getProduct(product.id);
+      setProduct(updatedProduct);
+      console.log("Status Change - Product updated successfully");
+      
+      // SOLD_OUT 모달 닫기
+      if (newStatus === "SOLD_OUT") {
+        setIsSoldOutModalOpen(false);
+        setBuyerId("");
+        setStatusError("");
+      }
+    } catch (error) {
+      console.error("Status Change - Exception:", error);
+      setStatusError("상태 변경에 실패했습니다.");
+    } finally {
+      setIsStatusUpdating(false);
+      setIsDropdownOpen(false);
+    }
+  };
+
+  const handleEditProduct = () => {
+    if (!product) return;
+    router.push(`/products/${product.id}/edit`);
+  };
+
+  const loadChatRooms = async () => {
+    if (!product) return;
+    
+    setIsLoadingChatRooms(true);
+    try {
+      const rooms = await getProductChatRooms(productId);
+      setChatRooms(rooms);
+    } catch (error) {
+      console.error("Failed to load chat rooms:", error);
+    } finally {
+      setIsLoadingChatRooms(false);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!product || !product.id) {
+      setDeleteError("상품 정보가 없습니다.");
+      return;
+    }
+
+    const confirmed = window.confirm("정말로 이 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.");
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setDeleteError("로그인이 필요합니다.");
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8080/api/products/${product.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          setDeleteError("상품을 삭제할 권한이 없습니다.");
+        } else {
+          setDeleteError("상품 삭제에 실패했습니다.");
+        }
+        return;
+      }
+
+      alert("상품이 성공적으로 삭제되었습니다.");
+      router.push("/");
+    } catch (error) {
+      console.error("Delete Product - Exception:", error);
+      setDeleteError("상품 삭제에 실패했습니다.");
+    } finally {
+      setIsDeleting(false);
+      setIsDropdownOpen(false);
+    }
+  };
+
+  const handleToggleLike = async () => {
+    if (!product || !product.id) return;
+    if (!isLoggedIn) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    // Optimistic update: 즉시 UI 업데이트
+    const previousIsLiked = product.isLiked;
+    const previousLikeCount = product.likeCount;
+
+    setProduct(prev => prev ? {
+      ...prev,
+      isLiked: !prev.isLiked,
+      likeCount: prev.isLiked ? prev.likeCount - 1 : prev.likeCount + 1,
+    } : null);
+
+    setIsLiking(true);
+
+    try {
+      await toggleLike(product.id);
+    } catch (error) {
+      console.error("Toggle like error:", error);
+      
+      // Rollback: 실패 시 원래 상태로 복원
+      setProduct(prev => prev ? {
+        ...prev,
+        isLiked: previousIsLiked,
+        likeCount: previousLikeCount,
+      } : null);
+
+      // 자신의 상품인 경우 에러 메시지 표시
+      if (error instanceof Error && error.message.includes("자신의 상품")) {
+        alert("자신의 상품은 찜할 수 없습니다.");
+      } else {
+        alert("찜하기에 실패했습니다.");
+      }
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  if (isInvalidProductId) {
+    return (
+      <div className="min-h-screen bg-slate-100 px-4 py-10">
+        <main className="mx-auto w-full max-w-4xl rounded-2xl bg-white p-8 shadow-sm">
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            잘못된 상품 경로입니다.
+          </p>
+          <Link
+            href="/"
+            className="mt-5 inline-block rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            목록으로 돌아가기
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-100 px-4 py-10">
+        <main className="mx-auto w-full max-w-4xl rounded-2xl bg-white p-8 shadow-sm">
+          <p className="text-sm text-slate-600">상품 정보를 불러오는 중...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (errorMessage || !product) {
+    return (
+      <div className="min-h-screen bg-slate-100 px-4 py-10">
+        <main className="mx-auto w-full max-w-4xl rounded-2xl bg-white p-8 shadow-sm">
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            {errorMessage || "상품 정보가 없습니다."}
+          </p>
+          <Link
+            href="/"
+            className="mt-5 inline-block rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            목록으로 돌아가기
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 px-4 py-10">
+      <main className="mx-auto w-full max-w-5xl">
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
+          >
+            목록으로 돌아가기
+          </Link>
+          
+          {/* 판매자만 보이는 점 세개 드롭다운 메뉴 */}
+          {isHydrated && isLoggedIn && isSeller && (
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors"
+                disabled={isStatusUpdating || isDeleting}
+              >
+                <svg className="w-5 h-5 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                </svg>
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                  {/* 판매완료 상품이 아닌 경우에만 수정 및 상태 변경 표시 */}
+                  {product?.status !== "SOLD_OUT" && (
+                    <>
+                      <button
+                        onClick={handleEditProduct}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
+                      >
+                        상품 내용 수정하기
+                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                          disabled={isStatusUpdating}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+                        >
+                          <span>{isStatusUpdating ? "상태 변경 중..." : "상품 상태 변경하기"}</span>
+                          <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        
+                        {isStatusDropdownOpen && (
+                          <div className="absolute left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                            <button
+                              onClick={() => {
+                                handleStatusChange("SELLING");
+                                setIsStatusDropdownOpen(false);
+                              }}
+                              disabled={isStatusUpdating || product?.status === "SELLING"}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                product?.status === "SELLING" 
+                                  ? "text-slate-400 bg-gray-50 cursor-not-allowed" 
+                                  : "text-slate-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              판매중 {product?.status === "SELLING" && "(현재)"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleStatusChange("RESERVED");
+                                setIsStatusDropdownOpen(false);
+                              }}
+                              disabled={isStatusUpdating || product?.status === "RESERVED"}
+                              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                product?.status === "RESERVED" 
+                                  ? "text-slate-400 bg-gray-50 cursor-not-allowed" 
+                                  : "text-slate-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              예약중 {product?.status === "RESERVED" && "(현재)"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsSoldOutModalOpen(true);
+                                setIsStatusDropdownOpen(false);
+                                loadChatRooms();
+                              }}
+                              disabled={isStatusUpdating}
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
+                            >
+                              판매완료
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* 상품 삭제는 항상 표시 */}
+                  <button
+                    onClick={handleDeleteProduct}
+                    disabled={isDeleting}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDeleting ? "삭제 중..." : "상품 삭제"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 2-column layout for desktop */}
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* Left column: Image */}
+          <div className="space-y-4">
+            <div className="aspect-square w-full overflow-hidden rounded-2xl bg-gray-100">
+              {getImageUrl(product.imageUrls) ? (
+                <img
+                  src={getImageUrl(product.imageUrls)!}
+                  alt={product.title}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                  <span className="text-sm">이미지 없음</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right column: Product info */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">{product.title}</h1>
+              
+              {/* 상태 변경 및 삭제 에러 메시지 */}
+              {(statusError || deleteError) && (
+                <div className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+                  {statusError || deleteError}
+                </div>
+              )}
+            </div>
+
+            <div className="border-b border-gray-200 pb-6">
+              {/* 가격과 상태 표시 */}
+              <div className="flex items-center justify-between">
+                <p className="text-3xl font-extrabold text-slate-900">
+                  {product.price.toLocaleString()}원
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${
+                    product?.status === "SELLING"
+                      ? "bg-green-100 text-green-800"
+                      : product?.status === "RESERVED"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}>
+                    {product?.status === "SELLING" && "판매중"}
+                    {product?.status === "RESERVED" && "예약중"}
+                    {product?.status === "SOLD_OUT" && "판매완료"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleLike}
+                    disabled={isLiking || isSeller}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={product.isLiked ? "찜 취소" : "찜하기"}
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${product.isLiked ? "fill-red-500 text-red-500" : "text-gray-400"}`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* 조회수와 좋아요 수 표시 */}
+              <div className="mt-3 flex items-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-1.5">
+                  <Eye className="h-4 w-4" />
+                  <span>조회 {product.viewCount}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Heart className="h-4 w-4" />
+                  <span>찜 {product.likeCount}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-b border-gray-200 pb-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-3">상품 설명</h2>
+              <p className="whitespace-pre-wrap text-slate-700 text-sm leading-relaxed">
+                {product.description}
+              </p>
+            </div>
+
+            {/* 채팅 문의하기 버튼 (판매자가 아닌 경우) */}
+            {isHydrated && (
+              isLoggedIn ? (
+                !isSeller && (
+                  <button
+                    type="button"
+                    onClick={handleInitiateChat}
+                    disabled={isChatLoading}
+                    className="w-full rounded-xl bg-slate-900 px-6 py-4 text-base font-semibold text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isChatLoading ? "채팅방 생성 중..." : "채팅 문의하기"}
+                  </button>
+                )
+              ) : (
+                <Link
+                  href="/login"
+                  className="block w-full rounded-xl bg-slate-900 px-6 py-4 text-center text-base font-semibold text-white hover:bg-slate-800 transition-colors"
+                >
+                  채팅 문의하기
+                </Link>
+              )
+            )}
+          </div>
+        </div>
+      </main>
+      {/* SOLD_OUT 모달 */}
+      {isSoldOutModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">판매완료 처리</h3>
+            <p className="text-sm text-slate-600 mb-4">채팅을 나눈 구매자를 선택해주세요.</p>
+            
+            {isLoadingChatRooms ? (
+              <div className="text-center py-4">
+                <div className="text-sm text-slate-500">채팅 목록을 불러오는 중...</div>
+              </div>
+            ) : chatRooms.length === 0 ? (
+              <div className="text-center py-4">
+                <div className="text-sm text-slate-500">채팅을 나눈 구매자가 없습니다.</div>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {chatRooms.map((room) => (
+                  <button
+                    key={room.id}
+                    onClick={() => {
+                      setBuyerId(room.buyerId.toString());
+                      handleStatusChange("SOLD_OUT", room.buyerId);
+                    }}
+                    disabled={isStatusUpdating}
+                    className="w-full text-left px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="font-medium text-slate-900">{room.opponentName}</div>
+                    <div className="text-xs text-slate-500">{room.lastMessage || "메시지 없음"}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {statusError && (
+              <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                {statusError}
+              </div>
+            )}
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setIsSoldOutModalOpen(false);
+                  setBuyerId("");
+                  setStatusError("");
+                  setChatRooms([]);
+                }}
+                disabled={isStatusUpdating}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
