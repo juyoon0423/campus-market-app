@@ -7,31 +7,36 @@ import com.compus.campusmarket.domain.product.dto.ProductListResponse;
 import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductImage;
-import com.compus.campusmarket.domain.product.entity.ProductLike;
 import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.repository.ProductLikeRepository;
 import com.compus.campusmarket.domain.product.repository.ProductRepository;
 import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.cache.annotation.Cacheable;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProductService {
+
+    private static final int LIKE_TOGGLE_MAX_ATTEMPTS = 6;
 
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ProductLikeRepository productLikeRepository;
     private final AiService aiService; // ✅ 추가 (AI 서비스 주입)
     private final ProductCacheService productCacheService;
+    private final ProductLikeService productLikeService;
 
     @Transactional
     public Long createProduct(Long sellerId, ProductCreateRequest request, List<String> imageUrls) {
@@ -179,10 +184,12 @@ public class ProductService {
 
     // ProductService.java 내부에 추가
 
+    // 거래 완료는 호출 빈도가 낮고, 실패 시 "다시 눌러주세요"라고 요구하기 어려운 사용자 액션이라
+    // 낙관적 재시도 대신 비관적 락으로 동시 완료 처리를 원천 차단한다(findByIdForUpdate).
     @Transactional
     public void completeTrade(Long productId, Long sellerId, Long buyerId) {
-        // 1. 상품 조회
-        Product product = productRepository.findById(productId)
+        // 1. 상품 조회 (락 획득 — 동시에 들어온 다른 completeTrade 요청은 이 트랜잭션이 끝날 때까지 대기)
+        Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
 
         // 2. 판매자 권한 확인 (본인의 상품인지)
@@ -192,37 +199,38 @@ public class ProductService {
         User buyer = userRepository.findById(buyerId)
                 .orElseThrow(() -> new IllegalArgumentException("구매자 정보가 올바르지 않습니다."));
 
-        // 4. 거래 완료 처리 (상태 변경 및 구매자 세팅)
+        // 4. 거래 완료 처리 (상태 변경 및 구매자 세팅) — 이미 SOLD_OUT이면 completeTrade 내부에서 예외 발생
         product.completeTrade(buyer, sellerId);
     }
 
-    // 2. 좋아요 토글 로직 추가
-    @Transactional
+    // 좋아요는 호출 빈도가 높고 경합 비용이 낮아, 락을 오래 잡는 대신 낙관적 락(@Version) + 짧은 재시도를 택한다.
+    // 실제 DB 갱신은 ProductLikeService.applyToggle(REQUIRES_NEW)에서 시도마다 새 트랜잭션으로 수행된다.
+    //
+    // 처음엔 ObjectOptimisticLockingFailureException만 재시도 대상으로 잡았는데, 인기 상품처럼 같은 row에
+    // 요청이 몰리면 버전 충돌이 나기도 전에 UPDATE 문 자체가 InnoDB 데드락(에러 1213)으로 실패하는 사례가
+    // 실측에서 확인됐다. ConcurrencyFailureException(낙관적 락 실패와 데드락의 공통 상위 타입)으로 넓혀서 재시도한다.
     public String toggleLike(Long productId, Long userId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
-
-        // 요구사항: 본인 상품은 좋아요 불가
-        if (product.getSeller().getId().equals(userId)) {
-            throw new IllegalStateException("자신의 상품에는 좋아요를 누를 수 없습니다.");
+        for (int attempt = 1; attempt <= LIKE_TOGGLE_MAX_ATTEMPTS; attempt++) {
+            try {
+                return productLikeService.applyToggle(productId, userId);
+            } catch (ConcurrencyFailureException | DataIntegrityViolationException e) {
+                log.warn("좋아요 처리 충돌 발생(시도 {}/{}), productId={}, userId={}, 원인={}",
+                        attempt, LIKE_TOGGLE_MAX_ATTEMPTS, productId, userId, e.getClass().getSimpleName());
+                if (attempt == LIKE_TOGGLE_MAX_ATTEMPTS) {
+                    throw new IllegalStateException("동시 요청이 많아 좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+                }
+                sleepBeforeRetry(attempt);
+            }
         }
+        throw new IllegalStateException("좋아요 처리에 실패했습니다.");
+    }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        // 이미 좋아요를 눌렀는지 확인
-        Optional<ProductLike> existingLike = productLikeRepository.findByUserAndProduct(user, product);
-
-        if (existingLike.isPresent()) {
-            // 이미 있으면 -> 좋아요 취소
-            productLikeRepository.delete(existingLike.get());
-            product.decreaseLikeCount();
-            return "좋아요가 취소되었습니다.";
-        } else {
-            // 없으면 -> 좋아요 추가
-            productLikeRepository.save(new ProductLike(user, product));
-            product.increaseLikeCount();
-            return "좋아요가 추가되었습니다.";
+    // 재시도가 한꺼번에 몰려 다시 충돌하는 걸 줄이기 위한 짧은 지터 백오프
+    private void sleepBeforeRetry(int attempt) {
+        try {
+            Thread.sleep((long) (Math.random() * 20 * attempt));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

@@ -49,6 +49,9 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private int likeCount = 0;
 
+    @Version
+    private Long version;
+
     // 생성
     public static Product create(String title, String description, Long price, User seller, String category) {
         Product product = new Product();
@@ -81,6 +84,9 @@ public class Product extends BaseTimeEntity {
 
     public void completeTrade(User buyer, Long userId) {
         validateSeller(userId);
+        if (this.status == ProductStatus.SOLD_OUT) {
+            throw new IllegalStateException("이미 거래가 완료된 상품입니다.");
+        }
         this.status = ProductStatus.SOLD_OUT;
         this.buyer = buyer;
     }
