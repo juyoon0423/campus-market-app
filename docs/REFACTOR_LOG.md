@@ -17,8 +17,16 @@
 ### 1) 보안 사고 대응 — API 키/비밀번호 git 히스토리 정리
 - `application.yml`에 커밋돼있던 카카오 client-secret, Gmail 앱 비밀번호, Gemini API 키를
   `git filter-repo`로 전체 히스토리에서 제거하고 force-push함(당시 backend 저장소가 public이었음)
-- **아직 재발급 안 함** — 카카오 client-secret / Gmail 앱 비밀번호 / Gemini API 키 세 개는
-  여전히 재발급이 필요함. 미룬 상태.
+- Gmail 앱 비밀번호(`GOOGLE_APP_PASSWORD`), Gemini API 키(`GEMINI_API_KEY`) 재발급 완료.
+  값은 모노레포 루트 `.env`(신규, 루트 `.gitignore`로 보호)에 두고, `application.yml`은
+  `${GOOGLE_APP_PASSWORD}`/`${GEMINI_API_KEY}` 플레이스홀더로 바꿈. 백엔드는 독립된 Gradle
+  프로젝트라 Spring Boot가 루트 `.env`를 자동으로 읽지 못하므로, `backend/build.gradle`이
+  `.env`를 직접 파싱해 `test`/`bootRun` 태스크의 프로세스 환경변수로 주입하도록 연결함.
+  카카오 맵 API 키(`NEXT_PUBLIC_KAKAO_MAP_KEY`, 신규 발급)는 Next.js가 자동으로 읽는
+  `frontend/.env.local`에 둠(아직 코드에서 실제로 쓰는 곳은 없음 — 지도 기능 추가 시 사용 예정).
+- **아직 재발급 안 함** — 카카오 OAuth `client-secret`(`application.yml`의
+  `spring.security.oauth2.client.registration.kakao.client-secret`)은 여전히 예전 값이 하드코딩된
+  채로 남아있음. 재발급 필요.
 
 ### 2) 포트폴리오 5번 항목 — 동시성 정합성 (commit `7fa0216`)
 - `completeTrade`(거래완료 처리)가 락/상태체크 없이 buyer를 덮어쓰는 문제, `toggleLike`가
@@ -111,8 +119,48 @@ Claude Code(Explore 서브에이전트 2개, 백엔드/프론트 각각)로 문�
    - Spring Boot 4.0.6 기준 Jackson이 `tools.jackson.*`(Jackson 3)로 바뀐 것을 테스트 작성
      중 확인(`com.fasterxml.jackson.databind.ObjectMapper` import 시 컴파일 에러 발생).
 
+### 7) 카카오맵 거래 희망 장소 기능 + 전체 기능 실기동 점검
+판매자가 상품 등록/수정 시 카카오맵으로 거래 희망 장소를 지정하고, 구매자가 상세 페이지에서
+확인할 수 있는 기능을 신규 구현. 이후 회원가입(실제 이메일 인증 코드 발송까지)~로그인~
+상품 등록/조회/검색/수정/삭제~찜하기~채팅~판매완료까지 브라우저로 전부 실기동 검증함.
+
+- **백엔드**: `Product`에 `tradeLocationName`/`tradeLatitude`/`tradeLongitude` 추가(nullable —
+  기능 생기기 전 상품은 null). `ProductCreateRequest`/`ProductUpdateRequest`에 필수값으로 검증
+  추가, `ProductDetailResponse`에 포함. `ProductService.createProduct`/`updateProduct`에서
+  `Product.updateTradeLocation(...)` 호출하도록 배선. `ProductServiceTest`에 저장/수정 검증
+  케이스 추가.
+- **프론트엔드**: `src/lib/kakaoMap.ts`(SDK 동적 로더, 중복 로드 방지 캐싱), `src/types/kakao-maps.d.ts`
+  (최소 타입 선언 — 공식 `@types` 패키지 없음), `KakaoMapPicker`(등록/수정용, 클릭 → 마커 이동 →
+  역지오코딩으로 주소 자동 채움, 직접 수정 가능), `KakaoMapView`(상세 페이지 읽기 전용 표시).
+  `upload/page.tsx`·`products/[id]/edit/page.tsx`·`products/[id]/page.tsx`에 연결. 지도가 없는
+  기존 상품은 섹션 자체가 안 보이도록 조건부 렌더링.
+- **카카오 개발자 콘솔 이슈**: 최초 테스트 시 SDK가 403(`NotAuthorizedError: App disabled
+  OPEN_MAP_AND_LOCAL service`)을 반환 — 콘솔에서 카카오맵 서비스 자체가 비활성화돼 있었음
+  (코드 문제 아님). 사용자가 콘솔에서 활성화한 뒤 정상 동작 확인.
+- **실기동 점검 중 발견해서 그 자리에서 고친 버그 3건**:
+  1. **STOMP 인증이 실제로는 전혀 반영 안 되던 회귀** — 5번 항목에서 만든
+     `StompAuthChannelInterceptor`가 deprecation 경고를 없애려고 `StompHeaderAccessor.wrap()`을
+     쓰도록 되어 있었는데, 이게 Spring이 CONNECT 시점에 인증 결과를 세션에 등록하는 내부 콜백
+     (`userChangeCallback`)과의 연결을 끊어버려서 **채팅 메시지 전송이 전부 NPE로 실패**하고
+     있었음(유닛 테스트는 이 콜백을 검증하지 않아서 못 잡았음 — 브라우저로 실제 메시지를
+     보내봐서 발견). `MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class)`
+     (deprecated지만 정확한 API)로 되돌리고, `userChangeCallback`이 실제로 호출되는지까지
+     검증하는 테스트(`CONNECT_인증_결과가_userChangeCallback으로_세션에_등록된다`) 추가.
+  2. **`/chat`, `/oauth/callback` 페이지가 프로덕션 빌드를 깨던 기존 버그** — `useSearchParams()`를
+     Suspense로 안 감싸서 `npm run build`가 실패(이전엔 프로덕션 빌드를 한 번도 안 돌려봐서
+     안 걸림). 두 페이지 다 내부 컴포넌트를 `<Suspense>`로 감싸서 해결.
+  3. **지도 클릭 위치가 브라우저 GPS 위치로 덮어써지는 레이스 컨디션** — `KakaoMapPicker`가
+     초기 로드시 `navigator.geolocation.getCurrentPosition`으로 현재 위치를 가져와 지도를
+     이동시키는데, 사용자가 그보다 먼저 지도를 클릭해도 뒤늦게 도착한 GPS 콜백이 클릭한 위치를
+     덮어써버렸음(서울을 클릭했는데 DB엔 강원도로 저장되는 걸로 발견). `hasUserPickedRef`
+     플래그로 사용자가 이미 클릭했으면 GPS 콜백을 무시하도록 수정.
+- 이번 점검에서 새로 찾았지만 이번 세션 범위 밖이라 아직 안 고친 것은
+  `docs/BUGFIX_TODO.md`에 정리해둠.
+
 ## 진행 중 / 다음에 할 일
 
-`docs/SECURITY_REFACTOR_TODO.md` 참고. 🔴 Critical 2건은 완료했고, 다음은 🟡 3(메인 페이지
-페이지네이션/N+1), 4(리뷰 중복 작성 차단) 순서로 진행하면 됨. 이번 세션에서 새로 찾은
-"채팅방 중복 생성 레이스"(`TODO`의 7번 항목)는 아직 미착수.
+1. **`docs/BUGFIX_TODO.md`** — 이번 세션 실기동 점검 중 발견한 버그/미완성 기능. 다음 세션은
+   여기부터 시작하면 됨.
+2. `docs/SECURITY_REFACTOR_TODO.md` 참고. 🔴 Critical 2건은 완료했고, 다음은 🟡 3(메인 페이지
+   페이지네이션/N+1), 4(리뷰 중복 작성 차단) 순서로 진행하면 됨. "채팅방 중복 생성 레이스"
+   (`TODO`의 7번 항목)는 아직 미착수.
