@@ -7,7 +7,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -20,11 +20,19 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    // MessageHeaderAccessor.getAccessor(message, Class)는 Spring 5.5부터 deprecated지만,
+    // StompHeaderAccessor.wrap(message)로 바꿨다가 실제로 채팅이 깨지는 걸 실기동 테스트에서 확인했다:
+    // StompSubProtocolHandler는 CONNECT 메시지를 만들 때 그 accessor 인스턴스에
+    // setUserChangeCallback(...)을 걸어두고, 이후 프레임에서 Principal을 이 콜백이 기록해둔 값으로
+    // 채운다. wrap()은 매번 새 accessor 객체를 만들어 그 콜백 연결이 끊기므로 setUser()를 호출해도
+    // 아무 효과가 없어(SEND 시점에 Principal이 null) 메시지 전송이 NPE로 죽었다. getAccessor()는
+    // 메시지에 실려온 "그" accessor 인스턴스(콜백 포함)를 그대로 돌려주므로 이 콜백이 정상 동작한다.
+    @SuppressWarnings("deprecation")
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-        if (!StompCommand.CONNECT.equals(accessor.getCommand())) {
+        if (accessor == null || !StompCommand.CONNECT.equals(accessor.getCommand())) {
             return message;
         }
 
@@ -35,9 +43,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         accessor.setUser(() -> String.valueOf(userId));
 
-        // wrap()으로 만든 접근자는 헤더의 복사본을 다루므로, 변경 사항을 실제로 반영하려면
-        // 이 헤더로 메시지를 다시 만들어 반환해야 한다(그냥 message를 반환하면 setUser가 무시됨).
-        return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
+        return message;
     }
 
     private String resolveToken(StompHeaderAccessor accessor) {

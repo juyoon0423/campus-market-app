@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
 
 export default function OAuthCallbackPage() {
+  return (
+    <Suspense fallback={null}>
+      <OAuthCallbackContent />
+    </Suspense>
+  );
+}
+
+function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login: setAuthLogin } = useAuth();

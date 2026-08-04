@@ -4,7 +4,7 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import SockJS from "sockjs-client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import api from "@/src/lib/api";
 import {
@@ -94,6 +94,14 @@ function getMessageRoomId(message: ChatMessageResponse): number | null {
 }
 
 export default function ChatPage() {
+  return (
+    <Suspense fallback={null}>
+      <ChatPageContent />
+    </Suspense>
+  );
+}
+
+function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoggedIn, isHydrated, token } = useAuth();
