@@ -14,6 +14,7 @@ import type {
   ProductUpdateRequest,
 } from "@/src/types/product";
 import { AxiosError } from "axios";
+import KakaoMapPicker, { TradeLocation } from "@/src/components/KakaoMapPicker";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
 
@@ -49,8 +50,12 @@ export default function ProductEditPage() {
     description: "",
     price: 0,
     category: "",
+    tradeLocationName: "",
+    tradeLatitude: 0,
+    tradeLongitude: 0,
     remainingImageUrls: [],
   });
+  const [tradeLocation, setTradeLocation] = useState<TradeLocation | null>(null);
 
   const [remainingImageUrls, setRemainingImageUrls] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
@@ -95,9 +100,19 @@ export default function ProductEditPage() {
           description: response.description,
           price: response.price,
           category: response.category,
+          tradeLocationName: response.tradeLocationName ?? "",
+          tradeLatitude: response.tradeLatitude ?? 0,
+          tradeLongitude: response.tradeLongitude ?? 0,
           remainingImageUrls: response.imageUrls || [],
         });
         setRemainingImageUrls(response.imageUrls || []);
+        if (response.tradeLatitude != null && response.tradeLongitude != null) {
+          setTradeLocation({
+            locationName: response.tradeLocationName ?? "",
+            latitude: response.tradeLatitude,
+            longitude: response.tradeLongitude,
+          });
+        }
       } catch {
         setErrorMessage("상품 정보를 불러오지 못했습니다.");
       } finally {
@@ -121,6 +136,11 @@ export default function ProductEditPage() {
       return;
     }
 
+    if (!tradeLocation) {
+      setErrorMessage("지도에서 거래 희망 장소를 선택해주세요.");
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage("");
 
@@ -130,6 +150,9 @@ export default function ProductEditPage() {
         description: formData.description,
         price: formData.price,
         category: formData.category,
+        tradeLocationName: tradeLocation.locationName,
+        tradeLatitude: tradeLocation.latitude,
+        tradeLongitude: tradeLocation.longitude,
         remainingImageUrls: remainingImageUrls,
       };
 
@@ -349,6 +372,13 @@ export default function ProductEditPage() {
               placeholder="상품에 대한 자세한 설명을 입력하세요"
               required
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              거래 희망 장소 *
+            </label>
+            <KakaoMapPicker initialLocation={tradeLocation} onChange={setTradeLocation} />
           </div>
 
           <div>

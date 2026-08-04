@@ -4,6 +4,9 @@ import com.compus.campusmarket.domain.chat.entity.ChatMessage;
 import com.compus.campusmarket.domain.chat.entity.ChatRoom;
 import com.compus.campusmarket.domain.chat.repository.ChatMessageRepository;
 import com.compus.campusmarket.domain.chat.repository.ChatRoomRepository;
+import com.compus.campusmarket.domain.product.dto.ProductCreateRequest;
+import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
+import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductLike;
 import com.compus.campusmarket.domain.product.repository.ProductLikeRepository;
@@ -18,9 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 // 찜/채팅방/리뷰가 걸려 있는 상품을 삭제하면 FK 제약(DataIntegrityViolationException)으로
@@ -44,9 +49,12 @@ class ProductServiceTest {
     private UserRepository userRepository;
 
     private final List<Long> createdUserIds = new ArrayList<>();
+    private final List<Long> createdProductIds = new ArrayList<>();
 
     @AfterEach
     void tearDown() {
+        createdProductIds.forEach(productRepository::deleteById);
+        createdProductIds.clear();
         userRepository.deleteAllById(createdUserIds);
         createdUserIds.clear();
     }
@@ -72,6 +80,65 @@ class ProductServiceTest {
 
         assertThatCode(() -> productService.deleteProduct(product.getId(), seller.getId()))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void 상품_등록시_거래_희망_장소가_저장된다() {
+        User seller = userRepository.save(newUser("seller"));
+        createdUserIds.add(seller.getId());
+
+        ProductCreateRequest request = new ProductCreateRequest();
+        request.setTitle("상품");
+        request.setDescription("설명");
+        request.setPrice(10_000L);
+        request.setCategory("전자기기");
+        request.setTradeLocationName("학생회관 앞");
+        request.setTradeLatitude(37.360);
+        request.setTradeLongitude(127.972);
+
+        Long productId = productService.createProduct(seller.getId(), request, Collections.emptyList());
+        createdProductIds.add(productId);
+
+        ProductDetailResponse detail = productService.getProductDetail(productId, seller.getId());
+
+        assertThat(detail.getTradeLocationName()).isEqualTo("학생회관 앞");
+        assertThat(detail.getTradeLatitude()).isEqualTo(37.360);
+        assertThat(detail.getTradeLongitude()).isEqualTo(127.972);
+    }
+
+    @Test
+    void 상품_수정시_거래_희망_장소를_변경할_수_있다() {
+        User seller = userRepository.save(newUser("seller"));
+        createdUserIds.add(seller.getId());
+
+        ProductCreateRequest createRequest = new ProductCreateRequest();
+        createRequest.setTitle("상품");
+        createRequest.setDescription("설명");
+        createRequest.setPrice(10_000L);
+        createRequest.setCategory("전자기기");
+        createRequest.setTradeLocationName("옛 장소");
+        createRequest.setTradeLatitude(37.0);
+        createRequest.setTradeLongitude(127.0);
+
+        Long productId = productService.createProduct(seller.getId(), createRequest, Collections.emptyList());
+        createdProductIds.add(productId);
+
+        ProductUpdateRequest updateRequest = new ProductUpdateRequest();
+        updateRequest.setTitle("상품");
+        updateRequest.setDescription("설명");
+        updateRequest.setPrice(10_000L);
+        updateRequest.setCategory("전자기기");
+        updateRequest.setTradeLocationName("새 장소");
+        updateRequest.setTradeLatitude(37.5);
+        updateRequest.setTradeLongitude(127.5);
+        updateRequest.setRemainingImageUrls(Collections.emptyList());
+
+        productService.updateProduct(productId, seller.getId(), updateRequest, Collections.emptyList());
+
+        ProductDetailResponse detail = productService.getProductDetail(productId, seller.getId());
+        assertThat(detail.getTradeLocationName()).isEqualTo("새 장소");
+        assertThat(detail.getTradeLatitude()).isEqualTo(37.5);
+        assertThat(detail.getTradeLongitude()).isEqualTo(127.5);
     }
 
     private User newUser(String tag) {

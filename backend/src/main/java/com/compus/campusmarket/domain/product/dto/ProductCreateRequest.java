@@ -20,4 +20,13 @@ public class ProductCreateRequest { // 혹은 ProductUpdateRequest
 
     @NotBlank(message = "카테고리를 선택해주세요.") // 이 필드가 반드시 있어야 합니다.
     private String category;
+
+    @NotBlank(message = "거래 희망 장소를 선택해주세요.")
+    private String tradeLocationName;
+
+    @NotNull(message = "지도에서 거래 희망 장소를 선택해주세요.")
+    private Double tradeLatitude;
+
+    @NotNull(message = "지도에서 거래 희망 장소를 선택해주세요.")
+    private Double tradeLongitude;
 }

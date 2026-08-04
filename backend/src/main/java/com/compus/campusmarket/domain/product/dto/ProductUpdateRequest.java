@@ -24,6 +24,15 @@ public class ProductUpdateRequest {
     @NotBlank(message = "카테고리를 선택해주세요.")
     private String category;
 
+    @NotBlank(message = "거래 희망 장소를 선택해주세요.")
+    private String tradeLocationName;
+
+    @NotNull(message = "지도에서 거래 희망 장소를 선택해주세요.")
+    private Double tradeLatitude;
+
+    @NotNull(message = "지도에서 거래 희망 장소를 선택해주세요.")
+    private Double tradeLongitude;
+
     // 기존 이미지 중 삭제하지 않고 남겨둘 이미지 URL 목록
     private List<String> remainingImageUrls = new ArrayList<>();
 }

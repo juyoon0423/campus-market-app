@@ -29,6 +29,11 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private String category;
 
+    // 거래 희망 장소(카카오맵에서 선택). 이 기능이 생기기 전에 등록된 상품은 null일 수 있다.
+    private String tradeLocationName;
+    private Double tradeLatitude;
+    private Double tradeLongitude;
+
     @Enumerated(EnumType.STRING)
     private ProductStatus status = ProductStatus.SELLING;
 
@@ -69,6 +74,12 @@ public class Product extends BaseTimeEntity {
         this.description = description;
         this.price = price;
         this.category = category;
+    }
+
+    public void updateTradeLocation(String tradeLocationName, Double tradeLatitude, Double tradeLongitude) {
+        this.tradeLocationName = tradeLocationName;
+        this.tradeLatitude = tradeLatitude;
+        this.tradeLongitude = tradeLongitude;
     }
 
     public void validateSeller(Long userId) {

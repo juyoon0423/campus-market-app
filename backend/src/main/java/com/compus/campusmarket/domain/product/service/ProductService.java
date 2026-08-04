@@ -76,6 +76,10 @@ public class ProductService {
                     .forEach(product.getImages()::add);
         }
 
+        // 5. 거래 희망 장소 저장
+        product.updateTradeLocation(
+                request.getTradeLocationName(), request.getTradeLatitude(), request.getTradeLongitude());
+
         return productRepository.save(product).getId();
     }
 
@@ -120,6 +124,8 @@ public class ProductService {
 
         // 2. 텍스트 정보 업데이트
         product.update(request.getTitle(), request.getDescription(), request.getPrice(), request.getCategory());
+        product.updateTradeLocation(
+                request.getTradeLocationName(), request.getTradeLatitude(), request.getTradeLongitude());
 
         // 3. 기존 이미지 정리 로직
         if (request.getRemainingImageUrls() != null) {

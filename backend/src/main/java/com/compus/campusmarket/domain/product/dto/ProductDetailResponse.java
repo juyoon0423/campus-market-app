@@ -22,6 +22,9 @@ public class ProductDetailResponse {
     private List<String> imageUrls;
     private int viewCount;
     private int likeCount;
+    private String tradeLocationName;
+    private Double tradeLatitude;
+    private Double tradeLongitude;
     @JsonProperty("isLiked")
     private boolean isLiked; // 현재 로그인한 사용자가 좋아요를 눌렀는지 여부
 
@@ -37,6 +40,9 @@ public class ProductDetailResponse {
         this.status = product.getStatus();
         this.viewCount = product.getViewCount();
         this.likeCount = product.getLikeCount();
+        this.tradeLocationName = product.getTradeLocationName();
+        this.tradeLatitude = product.getTradeLatitude();
+        this.tradeLongitude = product.getTradeLongitude();
         this.isLiked = isLiked;
         this.imageUrls = product.getImages().stream()
                 .map(image -> "/images/" + image.getImageUrl())

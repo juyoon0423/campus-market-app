@@ -5,6 +5,9 @@ export type ProductCreateRequest = {
   description: string;
   price: number;
   category: string;
+  tradeLocationName: string;
+  tradeLatitude: number;
+  tradeLongitude: number;
 };
 
 export type ProductUpdateRequest = {
@@ -12,6 +15,9 @@ export type ProductUpdateRequest = {
   description: string;
   price: number;
   category: string;
+  tradeLocationName: string;
+  tradeLatitude: number;
+  tradeLongitude: number;
   remainingImageUrls?: string[];
 };
 
@@ -40,5 +46,8 @@ export type ProductDetailResponse = {
   imageUrls?: string[] | null;
   viewCount: number;
   likeCount: number;
+  tradeLocationName?: string | null;
+  tradeLatitude?: number | null;
+  tradeLongitude?: number | null;
   isLiked: boolean;
 };

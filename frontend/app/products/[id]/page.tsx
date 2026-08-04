@@ -9,6 +9,7 @@ import { getProduct, toggleLike } from "@/src/lib/apis/productApi";
 import { createOrGetChatRoom, getProductChatRooms } from "@/src/lib/apis/chatApi";
 import type { ProductDetailResponse, ProductStatus } from "@/src/types/product";
 import type { ChatRoomResponse } from "@/src/types/chat";
+import KakaoMapView from "@/src/components/KakaoMapView";
 
 function getImageUrl(imageUrls?: string[] | null) {
   const firstImage = imageUrls?.[0];
@@ -545,6 +546,17 @@ export default function ProductDetailPage() {
                 {product.description}
               </p>
             </div>
+
+            {product.tradeLatitude != null && product.tradeLongitude != null ? (
+              <div className="border-b border-gray-200 pb-6">
+                <h2 className="text-lg font-semibold text-slate-900 mb-3">거래 희망 장소</h2>
+                <KakaoMapView
+                  latitude={product.tradeLatitude}
+                  longitude={product.tradeLongitude}
+                  locationName={product.tradeLocationName}
+                />
+              </div>
+            ) : null}
 
             {/* 채팅 문의하기 버튼 (판매자가 아닌 경우) */}
             {isHydrated && (

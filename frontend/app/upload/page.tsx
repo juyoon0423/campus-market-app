@@ -7,6 +7,7 @@ import { Sparkles } from "lucide-react";
 import { createProduct, generateDescription } from "@/src/lib/apis/productApi";
 import { useAuth } from "@/src/context/AuthContext";
 import { AxiosError } from "axios";
+import KakaoMapPicker, { TradeLocation } from "@/src/components/KakaoMapPicker";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function UploadPage() {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [tradeLocation, setTradeLocation] = useState<TradeLocation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -68,6 +70,12 @@ export default function UploadPage() {
       return;
     }
 
+    if (!tradeLocation) {
+      setErrorMessage("지도에서 거래 희망 장소를 선택해주세요.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       await createProduct(
         {
@@ -75,6 +83,9 @@ export default function UploadPage() {
           description,
           price: parsedPrice,
           category,
+          tradeLocationName: tradeLocation.locationName,
+          tradeLatitude: tradeLocation.latitude,
+          tradeLongitude: tradeLocation.longitude,
         },
         images,
       );
@@ -85,6 +96,7 @@ export default function UploadPage() {
       setPrice("");
       setCategory("");
       setImages([]);
+      setTradeLocation(null);
       router.push("/");
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -212,6 +224,13 @@ export default function UploadPage() {
                 <option value="기타">기타</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm text-slate-700">
+              거래 희망 장소
+            </label>
+            <KakaoMapPicker onChange={setTradeLocation} />
           </div>
 
           <div>
