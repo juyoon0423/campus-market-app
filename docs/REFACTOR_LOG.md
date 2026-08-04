@@ -67,7 +67,52 @@
     관리자 권한 개념 자체가 프로젝트에 없어 role 기반 제한은 별도 과제로 남음)
   - 인증 없이 호출 시 401 반환 확인(`curl -X POST /api/dummy/products` → 401)
 
+### 6) 코드베이스 전수 점검 후 발견한 항목 5건 수정
+Claude Code(Explore 서브에이전트 2개, 백엔드/프론트 각각)로 문서에 없던 이슈를 새로 찾아
+심각도순으로 5개를 골라 순서대로 수정함.
+
+1. **`updateProduct` multipart 헤더 회귀 버그** (`frontend/src/lib/apis/productApi.ts`)
+   - `README.md`에 "해결했다"고 적힌 "Content-Type을 수동 지정하면 boundary가 빠져 멀티파트
+     파싱이 깨진다" 문제가 `updateProduct`에서 재발한 상태였음(`createProduct`는 정상).
+     `headers: { "Content-Type": "multipart/form-data" }` 제거.
+2. **채팅 메시지 조회 IDOR** (`ChatRoomController`, `ChatService`, `ChatRoom` 엔티티)
+   - `GET /api/chat/room/{roomId}/messages`가 `@AuthenticationPrincipal`조차 받지 않아 로그인한
+     아무 사용자나 roomId를 순회하며 타인의 대화를 열람 가능했음. `ChatRoom.validateParticipant`
+     신규 추가, `findMessagesByRoomId`가 seller/buyer 여부를 검증하도록 수정.
+   - `ChatServiceTest`에 참여자 아닌 사용자의 조회 실패 케이스 추가.
+3. **상품 삭제 시 FK 연관 데이터 정리 누락** (`ProductService.deleteProduct`)
+   - `ProductLike`/`ChatRoom`(+`ChatMessage`)/`Review`를 먼저 정리하지 않아 찜/채팅방/리뷰가
+     있는 상품은 삭제 시 `DataIntegrityViolationException`으로 실패했음. 삭제 전 연관 데이터를
+     순서대로(메시지→채팅방, 리뷰, 좋아요) 정리하도록 수정. `ChatRoomRepository`/
+     `ChatMessageRepository`/`ReviewRepository`에 `deleteAllByProduct_Id` 등 추가.
+   - `ProductServiceTest` 신규 작성(찜+채팅방+리뷰가 걸린 상품도 정상 삭제되는지 검증).
+4. **WebSocket(STOMP) 채팅 무인증 + senderId 위조** (`WebSocketConfig`, `ChatController`, `ChatService`)
+   - `/ws-stomp`는 HTTP `JwtAuthenticationFilter`를 거치지 않아 STOMP 레벨에 인증이 전혀
+     없었고, 클라이언트가 보낸 `senderId`를 그대로 신뢰해 타인 명의로 메시지 위조가 가능했음.
+   - `StompAuthChannelInterceptor` 신규 추가: CONNECT 프레임의 `Authorization` 네이티브 헤더로
+     JWT를 검증하고 유효하면 `StompHeaderAccessor`에 인증된 유저를 심음(`WebSocketConfig`의
+     `configureClientInboundChannel`에 등록). `ChatController.message`는 클라이언트가 보낸
+     `senderId` 대신 `Principal`에서 얻은 값을 사용하고, `ChatService.saveMessage`도 방
+     참여자인지 검증 후 저장. `ChatMessageRequest`에서 이제 무의미해진 `senderId` 필드 제거.
+   - 프론트(`app/chat/page.tsx`)는 STOMP `connectHeaders`에 `Authorization: Bearer {token}`을
+     실어 보내도록 수정하고, 더 이상 쓰지 않는 `senderId`를 publish 페이로드에서 제거.
+   - `StompAuthChannelInterceptorTest` 신규 작성(정상/누락/위조 토큰 케이스), `ChatServiceTest`에
+     비참여자 senderId로 메시지 전송 시도 시 거부되는 케이스 추가.
+5. **요청 DTO Bean Validation 전면 부재** (`ProductCreateRequest`/`ProductUpdateRequest`/
+   `StatusUpdateRequest`/`ReviewRequest`/`UserSignUpRequest`/`UserLoginRequest`, `GlobalExceptionHandler`)
+   - `build.gradle`에 `spring-boot-starter-validation` 추가, 각 DTO에 `@NotBlank`/`@NotNull`/
+     `@Positive`/`@Email`/`@Size`/`@DecimalMin`·`@DecimalMax` 적용하고 해당 컨트롤러 메서드에
+     `@Valid` 추가. `GlobalExceptionHandler`에 `MethodArgumentNotValidException` 핸들러 추가해
+     첫 번째 필드 에러 메시지를 400으로 반환하도록 통일.
+   - STOMP 쪽 `ChatMessageRequest`는 `@RestControllerAdvice`가 적용되지 않는 별도 경로라
+     이번 범위에서 제외(필요해지면 `@MessageExceptionHandler`로 별도 처리 필요).
+   - `UserControllerValidationTest`, `ProductControllerValidationTest`(멀티파트 `@RequestPart`
+     경로에서도 `@Valid`가 실제로 동작하는지 별도 확인) 신규 작성.
+   - Spring Boot 4.0.6 기준 Jackson이 `tools.jackson.*`(Jackson 3)로 바뀐 것을 테스트 작성
+     중 확인(`com.fasterxml.jackson.databind.ObjectMapper` import 시 컴파일 에러 발생).
+
 ## 진행 중 / 다음에 할 일
 
-`docs/SECURITY_REFACTOR_TODO.md` 참고. Critical 2건은 완료했고, 다음은 🟡 3(메인 페이지
-페이지네이션/N+1), 4(리뷰 중복 작성 차단) 순서로 진행하면 됨.
+`docs/SECURITY_REFACTOR_TODO.md` 참고. 🔴 Critical 2건은 완료했고, 다음은 🟡 3(메인 페이지
+페이지네이션/N+1), 4(리뷰 중복 작성 차단) 순서로 진행하면 됨. 이번 세션에서 새로 찾은
+"채팅방 중복 생성 레이스"(`TODO`의 7번 항목)는 아직 미착수.
