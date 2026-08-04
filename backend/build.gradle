@@ -56,8 +56,32 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
+// 루트 .env(모노레포 최상위, 이 파일 기준 한 단계 위)를 읽어 실행/테스트 프로세스의 환경변수로
+// 주입한다. Spring Boot는 .env를 자동으로 읽지 않고, application.yml의 ${GEMINI_API_KEY} 같은
+// 플레이스홀더는 JVM 프로세스 환경변수(System.getenv)에서 값을 찾기 때문에 필요하다.
+def dotenvFile = file("${projectDir}/../.env")
+def dotenv = [:]
+if (dotenvFile.exists()) {
+    dotenvFile.eachLine { rawLine ->
+        def line = rawLine.trim()
+        if (line && !line.startsWith('#')) {
+            def separatorIndex = line.indexOf('=')
+            if (separatorIndex > 0) {
+                def key = line.substring(0, separatorIndex).trim()
+                def value = line.substring(separatorIndex + 1).trim()
+                dotenv[key] = value
+            }
+        }
+    }
+}
+
 tasks.named('test') {
     useJUnitPlatform()
+    environment(dotenv)
+}
+
+tasks.named('bootRun') {
+    environment(dotenv)
 }
 
 sourceSets {
