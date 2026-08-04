@@ -4,12 +4,17 @@ import com.compus.campusmarket.domain.chat.entity.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
     List<ChatMessage> findAllByChatRoomIdOrderByCreatedAtAsc(Long roomId);
+
+    // derived delete는 엔티티를 하나씩 remove()하기 때문에 호출부에 트랜잭션이 없으면 실패한다 — 명시적으로 걸어둔다.
+    @Transactional
+    void deleteAllByChatRoom_IdIn(List<Long> chatRoomIds);
     // 마지막 메시지 조회 쿼리 추가
     @Query("SELECT cm.message FROM ChatMessage cm WHERE cm.chatRoom.id = :roomId ORDER BY cm.createdAt DESC LIMIT 1")
     Optional<String> findLastMessageByRoomId(@Param("roomId") Long roomId);

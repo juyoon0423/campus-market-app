@@ -10,6 +10,10 @@ import com.compus.campusmarket.domain.product.entity.ProductImage;
 import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.repository.ProductLikeRepository;
 import com.compus.campusmarket.domain.product.repository.ProductRepository;
+import com.compus.campusmarket.domain.product.review.repository.ReviewRepository;
+import com.compus.campusmarket.domain.chat.entity.ChatRoom;
+import com.compus.campusmarket.domain.chat.repository.ChatMessageRepository;
+import com.compus.campusmarket.domain.chat.repository.ChatRoomRepository;
 import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +38,9 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ProductLikeRepository productLikeRepository;
+    private final ReviewRepository reviewRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final AiService aiService; // ✅ 추가 (AI 서비스 주입)
     private final ProductCacheService productCacheService;
     private final ProductLikeService productLikeService;
@@ -142,6 +149,17 @@ public class ProductService {
 
         // 본인 확인
         product.validateSeller(userId);
+
+        // FK로 상품을 참조하는 연관 데이터를 먼저 정리하지 않으면 DataIntegrityViolationException으로 삭제가 실패한다.
+        List<Long> chatRoomIds = chatRoomRepository.findAllByProduct_Id(productId).stream()
+                .map(ChatRoom::getId)
+                .collect(Collectors.toList());
+        if (!chatRoomIds.isEmpty()) {
+            chatMessageRepository.deleteAllByChatRoom_IdIn(chatRoomIds);
+        }
+        chatRoomRepository.deleteAllByProduct_Id(productId);
+        reviewRepository.deleteAllByProduct_Id(productId);
+        productLikeRepository.deleteAllByProduct_Id(productId);
 
         productRepository.delete(product);
     }

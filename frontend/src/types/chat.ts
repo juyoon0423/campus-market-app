@@ -8,7 +8,6 @@ export type ChatRoomResponse = {
 
 export type ChatMessageRequest = {
   roomId: number;
-  senderId: number;
   message: string;
 };
 

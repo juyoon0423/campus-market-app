@@ -146,6 +146,7 @@ export default function ChatPage() {
     const client = new Client({
       reconnectDelay: 5000,
       webSocketFactory: () => new SockJS(wsEndpoint),
+      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
     if (connectTimeoutRef.current !== null) {
@@ -201,7 +202,7 @@ export default function ChatPage() {
 
     client.activate();
     stompClientRef.current = client;
-  }, []);
+  }, [token]);
 
   const subscribeRoom = useCallback((roomId: number) => {
     const client = stompClientRef.current;
@@ -412,7 +413,6 @@ export default function ChatPage() {
 
     const payload: ChatMessageRequest = {
       roomId,
-      senderId: resolvedSenderId,
       message: text,
     };
 

@@ -27,4 +27,11 @@ public class ChatRoom extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "buyer_id")
     private User buyer;
+
+    public void validateParticipant(Long userId) {
+        boolean isParticipant = this.seller.getId().equals(userId) || this.buyer.getId().equals(userId);
+        if (!isParticipant) {
+            throw new IllegalStateException("해당 채팅방에 대한 권한이 없습니다.");
+        }
+    }
 }

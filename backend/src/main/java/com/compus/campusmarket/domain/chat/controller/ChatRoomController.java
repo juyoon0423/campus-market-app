@@ -45,9 +45,13 @@ public class ChatRoomController {
 
     // 채팅방 메시지 내역 조회
     @GetMapping("/room/{roomId}/messages")
-    public ResponseEntity<List<ChatMessageResponse>> getRoomMessages(@PathVariable Long roomId) {
+    public ResponseEntity<List<ChatMessageResponse>> getRoomMessages(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long currentUserId = userDetails.getUserId();
         // 서비스가 DTO 리스트를 주므로 그대로 리턴!
-        List<ChatMessageResponse> responses = chatService.findMessagesByRoomId(roomId);
+        List<ChatMessageResponse> responses = chatService.findMessagesByRoomId(roomId, currentUserId);
         return ResponseEntity.ok(responses);
     }
 

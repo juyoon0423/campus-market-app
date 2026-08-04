@@ -6,6 +6,7 @@ import com.compus.campusmarket.domain.user.service.EmailService;
 import com.compus.campusmarket.domain.user.service.UserService;
 import com.compus.campusmarket.global.config.auth.CustomUserDetails;
 import com.compus.campusmarket.global.util.JwtTokenProvider;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,13 +25,13 @@ public class UserController {
     private final EmailService emailService;
 
     @PostMapping("/signup")
-    public ResponseEntity<String> signUp(@RequestBody UserSignUpRequest request) {
+    public ResponseEntity<String> signUp(@Valid @RequestBody UserSignUpRequest request) {
         userService.signUp(request);
         return ResponseEntity.ok("회원가입 완료");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody UserLoginRequest loginRequest) {
+    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserLoginRequest loginRequest) {
         User loginUser = userService.login(loginRequest.getEmail(), loginRequest.getPassword());
 
         // 토큰 생성

@@ -5,6 +5,7 @@ import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.service.ProductService;
 import com.compus.campusmarket.global.config.auth.CustomUserDetails;
 import com.compus.campusmarket.global.util.FileUploadUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,7 +28,7 @@ public class ProductController {
     // 상품 등록
     @PostMapping
     public ResponseEntity<String> createProduct(
-            @RequestPart("data") ProductCreateRequest requestDto,
+            @Valid @RequestPart("data") ProductCreateRequest requestDto,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails) throws IOException {
 
@@ -49,7 +50,7 @@ public class ProductController {
     @PatchMapping("/{productId}")
     public ResponseEntity<String> updateProduct(
             @PathVariable Long productId,
-            @RequestPart("data") ProductUpdateRequest updateRequest,
+            @Valid @RequestPart("data") ProductUpdateRequest updateRequest,
             @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
             @AuthenticationPrincipal CustomUserDetails userDetails) throws IOException {
 
@@ -123,7 +124,7 @@ public class ProductController {
     @PatchMapping("/{productId}/status")
     public ResponseEntity<String> updateStatus(
             @PathVariable Long productId,
-            @RequestBody StatusUpdateRequest request,
+            @Valid @RequestBody StatusUpdateRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         if (request.getStatus() == ProductStatus.SOLD_OUT) {

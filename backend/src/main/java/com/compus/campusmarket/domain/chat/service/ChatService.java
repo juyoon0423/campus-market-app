@@ -59,14 +59,17 @@ public class ChatService {
         // 서비스에서 DTO로 변환해서 반환
         return new ChatRoomResponse(room, buyerId, lastMessage);
     }
+    // senderId는 클라이언트가 보낸 값이 아니라 STOMP 인증(StompAuthChannelInterceptor)으로 확인된
+    // 값을 호출부(ChatController)에서 넘겨받는다 — 그렇지 않으면 누구든 타인 명의로 메시지를 보낼 수 있다.
     @Transactional
-    public ChatMessageResponse saveMessage(ChatMessageRequest request) {
+    public ChatMessageResponse saveMessage(ChatMessageRequest request, Long senderId) {
         ChatRoom room = chatRoomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new IllegalArgumentException("채팅방 없음"));
+        room.validateParticipant(senderId);
 
         ChatMessage message = ChatMessage.builder()
                 .chatRoom(room)
-                .senderId(request.getSenderId())
+                .senderId(senderId)
                 .message(request.getMessage())
                 .build();
 
@@ -94,7 +97,11 @@ public class ChatService {
                         ChatMessageRepository.LastMessageRow::getMessage));
     }
 
-    public List<ChatMessageResponse> findMessagesByRoomId(Long roomId) {
+    public List<ChatMessageResponse> findMessagesByRoomId(Long roomId, Long currentUserId) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("채팅방이 존재하지 않습니다."));
+        room.validateParticipant(currentUserId);
+
         return chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAsc(roomId)
                 .stream()
                 .map(ChatMessageResponse::new)

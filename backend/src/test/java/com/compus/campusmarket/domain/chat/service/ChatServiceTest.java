@@ -1,5 +1,7 @@
 package com.compus.campusmarket.domain.chat.service;
 
+import com.compus.campusmarket.domain.chat.dto.ChatMessageRequest;
+import com.compus.campusmarket.domain.chat.dto.ChatMessageResponse;
 import com.compus.campusmarket.domain.chat.dto.ChatRoomResponse;
 import com.compus.campusmarket.domain.chat.entity.ChatMessage;
 import com.compus.campusmarket.domain.chat.entity.ChatRoom;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // 방마다 반복 쿼리를 날리던 걸 단일 배치 쿼리(findLastMessagesByRoomIds)로 바꾼 뒤,
 // 방마다 정확히 자기 자신의 마지막 메시지에 매핑되는지(다른 방 메시지가 섞이지 않는지) 검증한다.
@@ -79,6 +82,42 @@ class ChatServiceTest {
 
         assertThat(room1Response.getLastMessage()).isEqualTo("room1-new");
         assertThat(room2Response.getLastMessage()).isEqualTo("room2-only");
+    }
+
+    @Test
+    void findMessagesByRoomId_참여자가_아니면_조회할_수_없다() {
+        setUp();
+        chatMessageRepository.save(ChatMessage.builder().chatRoom(room1).senderId(buyer.getId()).message("비밀 대화").build());
+        User stranger = userRepository.save(newUser("stranger"));
+
+        try {
+            assertThatThrownBy(() -> chatService.findMessagesByRoomId(room1.getId(), stranger.getId()))
+                    .isInstanceOf(IllegalStateException.class);
+
+            List<ChatMessageResponse> asParticipant = chatService.findMessagesByRoomId(room1.getId(), buyer.getId());
+            assertThat(asParticipant).extracting(ChatMessageResponse::getMessage).containsExactly("비밀 대화");
+        } finally {
+            userRepository.deleteById(stranger.getId());
+        }
+    }
+
+    @Test
+    void saveMessage_참여자가_아닌_senderId로는_메시지를_보낼_수_없다() {
+        setUp();
+        User stranger = userRepository.save(newUser("stranger"));
+        ChatMessageRequest request = new ChatMessageRequest();
+        request.setRoomId(room1.getId());
+        request.setMessage("몰래 보내는 메시지");
+
+        try {
+            assertThatThrownBy(() -> chatService.saveMessage(request, stranger.getId()))
+                    .isInstanceOf(IllegalStateException.class);
+
+            ChatMessageResponse saved = chatService.saveMessage(request, buyer.getId());
+            assertThat(saved.getSenderId()).isEqualTo(buyer.getId());
+        } finally {
+            userRepository.deleteById(stranger.getId());
+        }
     }
 
     private User newUser(String tag) {

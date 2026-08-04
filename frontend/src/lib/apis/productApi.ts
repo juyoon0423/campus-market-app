@@ -48,11 +48,7 @@ export async function updateProduct(
     formData.append("newImages", image);
   });
 
-  const response = await api.patch<string>(`/api/products/${productId}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await api.patch<string>(`/api/products/${productId}`, formData);
   return response.data;
 }
 
