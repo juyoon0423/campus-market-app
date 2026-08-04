@@ -51,6 +51,23 @@
   배치 네이티브 쿼리 1회로 축소
 - `FileUploadUtilTest`, `ChatServiceTest` 신규 작성, `ProductConcurrencyTest`에 케이스 추가
 
+### 5) "팀장 리뷰" 기준 필수 리팩토링 2차 — Critical 2건
+- **비밀번호 평문 저장/비교** (`UserService.java`, `SecurityConfig.java`)
+  - `SecurityConfig`에 `PasswordEncoder`(`BCryptPasswordEncoder`) 빈 추가
+  - `signUp`: `passwordEncoder.encode(...)`로 인코딩 후 저장 / `login`: `passwordEncoder.matches(...)`로 비교
+  - OAuth 가입 경로(`CustomOAuth2UserService`)는 `UserService.signUp`을 거치지 않고 하드코딩
+    placeholder(`"OAUTH_USER"`)를 쓰며 로그인 비교에도 안 쓰여 영향 없음을 확인, 손대지 않음
+  - `UserServiceTest` 신규 작성(해시 저장 확인 + 정상/오답 비밀번호 로그인 검증)
+  - 기존 로컬 DB의 평문 비밀번호 계정은 로그인이 깨짐(예상된 동작, 재가입 필요)
+- **`/api/dummy/**` 무인증 노출** (`SecurityConfig.java`)
+  - TODO는 `@Profile("local")`(옵션 b)을 추천했지만, 이 프로젝트엔 프로필 분리 인프라가
+    전혀 없어서(`application-local.yml`, `SPRING_PROFILES_ACTIVE` 설정 등 전무) 그대로
+    적용하면 로컬 실행 방식 자체를 바꿔야 하는 부작용이 있었음. 대신 옵션 (a)로 처리:
+    `permitAll` 목록에서 `/api/dummy/**` 제거해 인증을 요구하도록만 변경(로그인은 필요하지만
+    관리자 권한 개념 자체가 프로젝트에 없어 role 기반 제한은 별도 과제로 남음)
+  - 인증 없이 호출 시 401 반환 확인(`curl -X POST /api/dummy/products` → 401)
+
 ## 진행 중 / 다음에 할 일
 
-`docs/SECURITY_REFACTOR_TODO.md` 참고. 요약하면 **비밀번호 평문 저장**이 최우선 순위.
+`docs/SECURITY_REFACTOR_TODO.md` 참고. Critical 2건은 완료했고, 다음은 🟡 3(메인 페이지
+페이지네이션/N+1), 4(리뷰 중복 작성 차단) 순서로 진행하면 됨.

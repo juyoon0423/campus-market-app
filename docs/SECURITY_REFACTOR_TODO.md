@@ -1,37 +1,8 @@
 # 다음 작업: "팀장 리뷰" 기준 필수 리팩토링 2차
 
-`docs/REFACTOR_LOG.md`의 "4) 팀장 리뷰 필수 리팩토링 1차"에 이어지는 목록. 토큰 부족으로
-중단했던 지점 — 아래 순서 그대로 진행하면 됨. 각 항목에 파일 경로·현재 코드·수정 방향을
-적어뒀으니 바로 착수 가능.
-
-## 🔴 Critical — 최우선
-
-### 1. 비밀번호 평문 저장/비교
-- **파일**: `backend/src/main/java/com/compus/campusmarket/domain/user/service/UserService.java`
-- **현재 코드**:
-  ```java
-  User.create(..., request.getPassword())      // signUp: 그대로 저장
-  u.getPassword().equals(password)              // login: 평문 비교
-  ```
-- 프로젝트 전체에 `PasswordEncoder`/`BCrypt` 사용 0건 확인함(`grep -rln "PasswordEncoder\|BCrypt"` 결과 없음).
-- **수정 방향**:
-  1. `SecurityConfig`에 `@Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }` 추가
-  2. `UserService.signUp`에서 `passwordEncoder.encode(request.getPassword())`로 인코딩 후 저장
-  3. `UserService.login`에서 `passwordEncoder.matches(password, u.getPassword())`로 비교
-  4. `CustomUserDetailsService`/`CustomUserDetails`가 비밀번호를 다른 용도로 참조하는지 확인
-     (JWT 기반이라 `AuthenticationManager`를 안 거치는 것으로 보이지만 재확인 필요)
-- **주의**: 기존 DB의 평문 비밀번호는 인코딩 형식이 아니라 로그인이 깨짐. 로컬 DB엔 테스트
-  유저 몇 명뿐이니 그냥 재가입시키면 됨(마이그레이션 로직 불필요).
-- 예상 소요: 30분~1시간
-
-### 2. `/api/dummy/**` 무인증 노출
-- **파일**: `backend/src/main/java/com/compus/campusmarket/global/config/SecurityConfig.java` (44-52줄 부근)
-- **현재**: `permitAll()` 목록에 `"/api/dummy/**"` 포함 — 로그인 없이 100만 건 삽입 트리거 가능
-- **수정 방향**(택1):
-  - (a) permitAll 목록에서 제거해 인증 요구(가장 간단)
-  - (b) `DummyDataController`에 `@Profile("local")` 붙여서 로컬 프로필에서만 빈 등록(더 안전 —
-    운영 빌드에는 아예 존재하지 않게 됨). **이쪽을 추천.**
-- 예상 소요: 30분 이내
+`docs/REFACTOR_LOG.md`의 "4) 팀장 리뷰 필수 리팩토링 1차"에 이어지는 목록. 🔴 Critical 1, 2번은
+완료(`docs/REFACTOR_LOG.md`의 "5) 팀장 리뷰 필수 리팩토링 2차" 참고). 아래 🟡 3번부터 이어서
+진행하면 됨.
 
 ## 🟡 중요 — 여유 되면
 
@@ -96,6 +67,6 @@
 ## 재개할 때 체크리스트
 1. 로컬 MySQL/Redis 떠 있는지 확인(`nc -z localhost 3306`, `nc -z localhost 6379`)
 2. `docs/REFACTOR_LOG.md` 읽고 지금까지 뭘 했는지 파악
-3. 이 파일의 🔴 1, 2번부터 순서대로 진행
+3. 이 파일의 🟡 3번부터 순서대로 진행
 4. 각 항목 수정 후 `./gradlew test`로 전체 테스트 통과 확인(가능하면 새 항목마다 검증 테스트 추가)
 5. 완료되면 `docs/REFACTOR_LOG.md`에 완료 기록 추가하고 이 파일에서 항목 제거, 커밋
