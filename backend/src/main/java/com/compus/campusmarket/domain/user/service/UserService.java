@@ -5,6 +5,7 @@ import com.compus.campusmarket.domain.user.dto.UserSignUpRequest;
 import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final EmailService emailService; // 👈 상단 의존성 주입에 추가
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public Long signUp(UserSignUpRequest request) {
@@ -36,7 +38,7 @@ public class UserService {
                 request.getName(),
                 request.getStudentId(),
                 request.getDepartment(),
-                request.getPassword()
+                passwordEncoder.encode(request.getPassword())
         );
 
         Long savedUserId = userRepository.save(user).getId();
@@ -49,7 +51,7 @@ public class UserService {
 
     public User login(String email, String password) {
         return userRepository.findByEmail(email)
-                .filter(u -> u.getPassword().equals(password))
+                .filter(u -> passwordEncoder.matches(password, u.getPassword()))
                 .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다."));
     }
 

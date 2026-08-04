@@ -11,6 +11,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // [수정] 필터 클래스 임포트
 import org.springframework.web.cors.CorsConfiguration;
@@ -47,8 +49,7 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/favicon.ico",
                                 "/error",
-                                "/ws-stomp/**",
-                                "/api/dummy/**"
+                                "/ws-stomp/**"
                         ).permitAll()
 
                         .requestMatchers("/api/users/emails/**").permitAll()
@@ -81,6 +82,11 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
