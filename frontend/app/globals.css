@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* 배경 · 표면 · 보더 */
+  --color-bg: #fbf8f4;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f5efe5;
+  --color-border: #e8e0d3;
+  --color-border-strong: #d9cebc;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* 텍스트 */
+  --color-text: #241c15;
+  --color-text-muted: #7a6f62;
+  --color-text-faint: #a89c8b;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* 브랜드 액센트 */
+  --color-accent: #ff6b45;
+  --color-accent-strong: #e8552f;
+  --color-accent-soft: #ffe4d6;
+  --color-accent-ink: #7a2a12;
+
+  /* 상태: 판매중 */
+  --color-green: #1fa971;
+  --color-green-soft: #dcf3e7;
+  --color-green-ink: #0f5c3d;
+
+  /* 상태: 예약중 */
+  --color-amber: #c97f13;
+  --color-amber-soft: #fbedd3;
+  --color-amber-ink: #6b4308;
+
+  /* 상태: 에러/삭제 */
+  --color-red: #c6483d;
+  --color-red-soft: #fbe4e1;
+  --color-red-ink: #7a2820;
+
+  /* 반경: 인풋 10 / 버튼 14 / 카드·모달 20 */
+  --radius-field: 10px;
+  --radius-button: 14px;
+  --radius-card: 20px;
+
+  /* 그림자: 웜톤 잉크 기반 */
+  --shadow-soft: 0 1px 2px rgba(36, 28, 21, 0.07);
+  --shadow-elevated: 0 6px 20px rgba(36, 28, 21, 0.09);
+  --shadow-floating: 0 16px 40px rgba(36, 28, 21, 0.14);
+
+  --font-sans: var(--font-pretendard), -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-feature-settings: "tnum" 1;
 }

@@ -1,10 +1,10 @@
 "use client";
 
 import { Client, type IMessage } from "@stomp/stompjs";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import SockJS from "sockjs-client";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft } from "lucide-react";
 import { useAuth } from "@/src/context/AuthContext";
 import api from "@/src/lib/api";
 import {
@@ -17,6 +17,7 @@ import type {
   ChatMessageResponse,
   ChatRoomResponse,
 } from "@/src/types/chat";
+import SiteHeader from "@/src/components/SiteHeader";
 
 function findNumericUserId(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -122,6 +123,7 @@ function ChatPageContent() {
 
   const senderIdFromToken = useMemo(() => extractUserIdFromToken(token), [token]);
   const senderId = senderIdFromToken ?? fallbackSenderId;
+  const selectedRoom = rooms.find((room) => room.id === selectedRoomId) ?? null;
 
   const fetchSenderIdFallback = useCallback(async (): Promise<number | null> => {
     try {
@@ -440,74 +442,92 @@ function ChatPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
-      <main className="mx-auto w-full max-w-5xl rounded-2xl bg-white p-4 shadow-sm md:p-6">
-        <header className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900">채팅</h1>
-          <Link
-            href="/"
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-gray-50 transition-colors"
-          >
-            메인으로
-          </Link>
-        </header>
+    <div className="flex h-screen flex-col">
+      <SiteHeader />
 
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 overflow-hidden px-4 py-4 sm:px-6 md:py-6">
         {errorMessage ? (
-          <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          <p className="shrink-0 rounded-field bg-red-soft px-4 py-2.5 text-sm text-red-ink">
             {errorMessage}
           </p>
         ) : null}
         {senderId === null ? (
-          <p className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          <p className="shrink-0 rounded-field bg-amber-soft px-4 py-2.5 text-sm text-amber-ink">
             로그인 토큰에서 사용자 ID를 읽지 못해 메시지 전송이 제한됩니다.
           </p>
         ) : null}
 
-        <section className="grid min-h-[560px] gap-4 md:grid-cols-[280px_1fr]">
-          <aside className="rounded-xl border border-gray-200 bg-white p-3">
-            <h2 className="mb-3 text-sm font-semibold text-slate-700">내 채팅방</h2>
-            {isLoadingRooms ? (
-              <p className="text-sm text-slate-500">채팅방을 불러오는 중...</p>
-            ) : rooms.length === 0 ? (
-              <p className="text-sm text-slate-500">참여 중인 채팅방이 없습니다.</p>
-            ) : (
-              <ul className="space-y-2">
-                {rooms.map((room) => (
-                  <li key={room.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRoomId(room.id)}
-                      className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
-                        room.id === selectedRoomId
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-gray-200 bg-white text-slate-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <p className="truncate text-sm font-semibold">{room.productName}</p>
-                      <p className="truncate text-xs opacity-80">
-                        {room.opponentName} · {room.lastMessage || "메시지 없음"}
-                      </p>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+        <div className="flex flex-1 gap-4 overflow-hidden">
+          {/* 채팅방 목록 — 모바일에서는 방을 선택하면 숨김 */}
+          <aside
+            className={`${selectedRoomId ? "hidden md:flex" : "flex"} w-full shrink-0 flex-col overflow-hidden rounded-card border border-border bg-surface md:w-72`}
+          >
+            <div className="shrink-0 border-b border-border px-4 py-3.5">
+              <h2 className="text-sm font-bold text-text">내 채팅방</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {isLoadingRooms ? (
+                <p className="p-2 text-sm text-text-muted">채팅방을 불러오는 중...</p>
+              ) : rooms.length === 0 ? (
+                <p className="p-2 text-sm text-text-muted">참여 중인 채팅방이 없습니다.</p>
+              ) : (
+                <ul className="space-y-1">
+                  {rooms.map((room) => (
+                    <li key={room.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRoomId(room.id)}
+                        className={`w-full rounded-field px-3 py-2.5 text-left transition-colors ${
+                          room.id === selectedRoomId
+                            ? "bg-accent text-white"
+                            : "text-text hover:bg-surface-alt"
+                        }`}
+                      >
+                        <p className="truncate text-sm font-bold">{room.productName}</p>
+                        <p
+                          className={`truncate text-xs ${
+                            room.id === selectedRoomId ? "text-white/80" : "text-text-faint"
+                          }`}
+                        >
+                          {room.opponentName} · {room.lastMessage || "메시지 없음"}
+                        </p>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </aside>
 
-          <section className="flex flex-col rounded-xl border border-gray-200 bg-white">
-            <div className="border-b border-gray-200 px-4 py-3">
-              <p className="text-sm font-semibold text-slate-700">
-                {selectedRoomId ? `채팅방 #${selectedRoomId}` : "채팅방을 선택하세요"}
-              </p>
+          {/* 대화창 — 모바일에서는 방을 선택했을 때만 표시 */}
+          <section
+            className={`${selectedRoomId ? "flex" : "hidden md:flex"} flex-1 flex-col overflow-hidden rounded-card border border-border bg-surface`}
+          >
+            <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setSelectedRoomId(null)}
+                className="-ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-text-muted hover:bg-surface-alt md:hidden"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-text">
+                  {selectedRoom ? selectedRoom.productName : "채팅방을 선택하세요"}
+                </p>
+                {selectedRoom ? (
+                  <p className="truncate text-xs text-text-faint">{selectedRoom.opponentName}</p>
+                ) : null}
+              </div>
             </div>
 
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
               {selectedRoomId === null ? (
-                <p className="text-sm text-slate-500">왼쪽에서 채팅방을 선택해 주세요.</p>
+                <p className="text-sm text-text-muted">왼쪽에서 채팅방을 선택해 주세요.</p>
               ) : isLoadingMessages ? (
-                <p className="text-sm text-slate-500">메시지를 불러오는 중...</p>
+                <p className="text-sm text-text-muted">메시지를 불러오는 중...</p>
               ) : messages.length === 0 ? (
-                <p className="text-sm text-slate-500">아직 메시지가 없습니다.</p>
+                <p className="text-sm text-text-muted">아직 메시지가 없습니다.</p>
               ) : (
                 messages.map((message, index) => {
                   const isMine = senderId !== null && message.senderId === senderId;
@@ -519,8 +539,8 @@ function ChatPageContent() {
                       <div
                         className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm ${
                           isMine
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-100 text-slate-800"
+                            ? "bg-accent text-white"
+                            : "bg-surface-alt text-text"
                         }`}
                       >
                         {message.message}
@@ -531,7 +551,7 @@ function ChatPageContent() {
               )}
             </div>
 
-            <div className="flex gap-2 border-t border-gray-200 p-3">
+            <div className="flex shrink-0 gap-2 border-t border-border p-3">
               <input
                 value={inputMessage}
                 onChange={(event) => setInputMessage(event.target.value)}
@@ -543,19 +563,19 @@ function ChatPageContent() {
                   }
                 }}
                 placeholder="메시지를 입력하세요"
-                className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                className="flex-1 rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface"
                 disabled={selectedRoomId === null}
               />
               <button
                 type="button"
                 onClick={handleSendMessage}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+                className="rounded-field bg-accent px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent-strong"
               >
                 전송
               </button>
             </div>
           </section>
-        </section>
+        </div>
       </main>
     </div>
   );

@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useEffect } from "react";
-import { Check, RefreshCw } from "lucide-react";
+import { Check } from "lucide-react";
 import { signUp, sendVerificationCode, verifyEmailCode } from "@/src/lib/apis/userApi";
 import { AxiosError } from "axios";
+import AuthLayout from "@/src/components/AuthLayout";
+import Button from "@/src/components/ui/Button";
+
+const fieldClasses =
+  "w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -114,100 +119,96 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
-      <main className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">회원가입</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          캠퍼스 마켓 가입 정보를 입력해주세요.
-        </p>
+    <AuthLayout title="회원가입" description="캠퍼스 마켓 가입 정보를 입력해주세요.">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-sm font-semibold text-text-muted">
+            이메일
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="email"
+              type="email"
+              value={form.email}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, email: event.target.value }))
+              }
+              required
+              disabled={isSubmitting || isEmailVerified || timerSeconds > 0}
+              className={`flex-1 ${fieldClasses}`}
+              placeholder="학교 이메일 (@sj.sangji.ac.kr)"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={handleSendVerificationCode}
+              disabled={isSendingCode || isEmailVerified || !form.email || timerSeconds > 0}
+              className="shrink-0"
+            >
+              {isSendingCode ? "발송 중..." : canResend ? "재발송" : "인증번호 발송"}
+            </Button>
+          </div>
+          {isEmailVerified && (
+            <div className="mt-2 flex items-center gap-1 text-sm font-semibold text-green-ink">
+              <Check className="h-4 w-4" />
+              <span>이메일 인증 완료</span>
+            </div>
+          )}
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        {timerSeconds > 0 && !isEmailVerified && (
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm text-slate-700">
-              이메일
+            <label htmlFor="verificationCode" className="mb-1.5 block text-sm font-semibold text-text-muted">
+              인증번호
             </label>
             <div className="flex gap-2">
               <input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, email: event.target.value }))
-                }
-                required
-                disabled={isSubmitting || isEmailVerified || timerSeconds > 0}
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
-                placeholder="학교 이메일 (@sj.sangji.ac.kr)"
+                id="verificationCode"
+                type="text"
+                value={verificationCode}
+                onChange={(event) => setVerificationCode(event.target.value)}
+                maxLength={6}
+                disabled={isVerifyingCode}
+                className={`flex-1 ${fieldClasses}`}
+                placeholder="6자리 인증번호"
               />
-              <button
+              <Button
                 type="button"
-                onClick={handleSendVerificationCode}
-                disabled={isSendingCode || isEmailVerified || !form.email || timerSeconds > 0}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                variant="secondary"
+                size="md"
+                onClick={handleVerifyCode}
+                disabled={isVerifyingCode || verificationCode.length !== 6}
+                className="shrink-0"
               >
-                {isSendingCode ? "발송 중..." : canResend ? "재발송" : "인증번호 발송"}
-              </button>
+                {isVerifyingCode ? "인증 중..." : "인증하기"}
+              </Button>
             </div>
-            {isEmailVerified && (
-              <div className="mt-2 flex items-center gap-1 text-sm text-green-600">
-                <Check className="h-4 w-4" />
-                <span>이메일 인증 완료</span>
-              </div>
-            )}
+            <p className="mt-1.5 text-xs text-text-faint">
+              남은 시간: {formatTime(timerSeconds)}
+            </p>
           </div>
+        )}
 
-          {timerSeconds > 0 && !isEmailVerified && (
-            <div>
-              <label htmlFor="verificationCode" className="mb-1 block text-sm text-slate-700">
-                인증번호
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="verificationCode"
-                  type="text"
-                  value={verificationCode}
-                  onChange={(event) => setVerificationCode(event.target.value)}
-                  maxLength={6}
-                  disabled={isVerifyingCode}
-                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
-                  placeholder="6자리 인증번호"
-                />
-                <button
-                  type="button"
-                  onClick={handleVerifyCode}
-                  disabled={isVerifyingCode || verificationCode.length !== 6}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-                >
-                  {isVerifyingCode ? "인증 중..." : "인증하기"}
-                </button>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">
-                남은 시간: {formatTime(timerSeconds)}
-              </p>
-            </div>
-          )}
+        <div>
+          <label htmlFor="name" className="mb-1.5 block text-sm font-semibold text-text-muted">
+            이름
+          </label>
+          <input
+            id="name"
+            value={form.name}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, name: event.target.value }))
+            }
+            required
+            disabled={isSubmitting}
+            className={fieldClasses}
+          />
+        </div>
 
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="name" className="mb-1 block text-sm text-slate-700">
-              이름
-            </label>
-            <input
-              id="name"
-              value={form.name}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, name: event.target.value }))
-              }
-              required
-              disabled={isSubmitting}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="studentId"
-              className="mb-1 block text-sm text-slate-700"
-            >
+            <label htmlFor="studentId" className="mb-1.5 block text-sm font-semibold text-text-muted">
               학번
             </label>
             <input
@@ -218,15 +219,12 @@ export default function SignUpPage() {
               }
               required
               disabled={isSubmitting}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
+              className={fieldClasses}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="department"
-              className="mb-1 block text-sm text-slate-700"
-            >
+            <label htmlFor="department" className="mb-1.5 block text-sm font-semibold text-text-muted">
               학과
             </label>
             <input
@@ -237,52 +235,45 @@ export default function SignUpPage() {
               }
               required
               disabled={isSubmitting}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
+              className={fieldClasses}
             />
           </div>
+        </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm text-slate-700"
-            >
-              비밀번호
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={form.password}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, password: event.target.value }))
-              }
-              required
-              disabled={isSubmitting}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 disabled:bg-slate-50"
-            />
-          </div>
-
-          {errorMessage ? (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-              {errorMessage}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
+        <div>
+          <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-text-muted">
+            비밀번호
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={form.password}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, password: event.target.value }))
+            }
+            required
             disabled={isSubmitting}
-            className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            {isSubmitting ? "가입 중..." : "회원가입"}
-          </button>
-        </form>
+            className={fieldClasses}
+          />
+        </div>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
-          이미 계정이 있나요?{" "}
-          <Link href="/login" className="font-semibold text-slate-900">
-            로그인
-          </Link>
-        </p>
-      </main>
-    </div>
+        {errorMessage ? (
+          <p className="rounded-field bg-red-soft px-3 py-2 text-sm text-red-ink">
+            {errorMessage}
+          </p>
+        ) : null}
+
+        <Button type="submit" variant="primary" size="lg" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? "가입 중..." : "회원가입"}
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-text-muted">
+        이미 계정이 있나요?{" "}
+        <Link href="/login" className="font-bold text-text hover:text-accent-strong">
+          로그인
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { ChevronLeft, Sparkles } from "lucide-react";
 import { useAuth } from "@/src/context/AuthContext";
 import {
   getProduct,
@@ -15,8 +15,14 @@ import type {
 } from "@/src/types/product";
 import { AxiosError } from "axios";
 import KakaoMapPicker, { TradeLocation } from "@/src/components/KakaoMapPicker";
+import SiteHeader from "@/src/components/SiteHeader";
+import FormSection from "@/src/components/ui/FormSection";
+import Button from "@/src/components/ui/Button";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
+
+const fieldClasses =
+  "w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
 
 function getImageUrl(imageUrl?: string) {
   if (!imageUrl) {
@@ -239,9 +245,12 @@ export default function ProductEditPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-100 px-4 py-10">
-        <main className="mx-auto w-full max-w-4xl rounded-2xl bg-white p-8 shadow-sm">
-          <p className="text-sm text-slate-600">상품 정보를 불러오는 중...</p>
+      <div className="min-h-screen">
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-3xl px-4 py-10">
+          <div className="rounded-card border border-border bg-surface p-8 shadow-soft">
+            <p className="text-sm text-text-muted">상품 정보를 불러오는 중...</p>
+          </div>
         </main>
       </div>
     );
@@ -249,222 +258,219 @@ export default function ProductEditPage() {
 
   if (errorMessage || !product) {
     return (
-      <div className="min-h-screen bg-slate-100 px-4 py-10">
-        <main className="mx-auto w-full max-w-4xl rounded-2xl bg-white p-8 shadow-sm">
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            {errorMessage || "상품 정보가 없습니다."}
-          </p>
-          <button
-            onClick={() => router.back()}
-            className="mt-5 inline-block rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            뒤로 가기
-          </button>
+      <div className="min-h-screen">
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-3xl px-4 py-10">
+          <div className="rounded-card border border-border bg-surface p-8 shadow-soft">
+            <p className="rounded-field bg-red-soft px-4 py-3 text-sm text-red-ink">
+              {errorMessage || "상품 정보가 없습니다."}
+            </p>
+            <Button variant="secondary" size="md" onClick={() => router.back()} className="mt-5">
+              뒤로 가기
+            </Button>
+          </div>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-10">
-      <main className="mx-auto w-full max-w-4xl rounded-2xl bg-white p-6 shadow-sm md:p-8">
+    <div className="min-h-screen">
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-6 sm:px-6 md:pb-16 md:pt-10">
         <div className="mb-6">
           <button
+            type="button"
             onClick={() => router.back()}
-            className="inline-block rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-text-muted transition-colors hover:text-text"
           >
-            뒤로 가기
+            <ChevronLeft className="h-4 w-4" />
+            뒤로
           </button>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">상품 수정</h1>
+          <h1 className="mt-3 text-2xl font-extrabold text-text sm:text-[1.75rem]">상품 수정</h1>
         </div>
 
-        {errorMessage && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            {errorMessage}
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="rounded-card border border-border bg-surface p-6 shadow-soft md:p-8">
+          <div className="space-y-8">
+            {errorMessage && (
+              <div className="rounded-field bg-red-soft px-4 py-3 text-sm text-red-ink">
+                {errorMessage}
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="title"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              상품 제목 *
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500"
-              placeholder="상품 제목을 입력하세요"
-              required
-            />
-          </div>
+            <FormSection title="기본 정보" first>
+              <div>
+                <label htmlFor="title" className="mb-2 block text-sm font-semibold text-text-muted">
+                  상품 제목
+                </label>
+                <input
+                  id="title"
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  className={fieldClasses}
+                  placeholder="상품 제목을 입력하세요"
+                  required
+                />
+              </div>
 
-          <div>
-            <label
-              htmlFor="category"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              카테고리 *
-            </label>
-            <select
-              id="category"
-              value={formData.category}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-500"
-              required
-            >
-              <option value="">카테고리를 선택하세요</option>
-              {categoryOptions.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="price" className="mb-2 block text-sm font-semibold text-text-muted">
+                    가격
+                  </label>
+                  <input
+                    id="price"
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) =>
+                      handleInputChange("price", Number(e.target.value))
+                    }
+                    className={fieldClasses}
+                    placeholder="0"
+                    min="0"
+                    required
+                  />
+                </div>
 
-          <div>
-            <label
-              htmlFor="price"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              가격 *
-            </label>
-            <input
-              id="price"
-              type="number"
-              value={formData.price}
-              onChange={(e) =>
-                handleInputChange("price", Number(e.target.value))
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500"
-              placeholder="0"
-              min="0"
-              required
-            />
-            <p className="mt-1 text-xs text-slate-500">원</p>
-          </div>
+                <div>
+                  <label htmlFor="category" className="mb-2 block text-sm font-semibold text-text-muted">
+                    카테고리
+                  </label>
+                  <select
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => handleInputChange("category", e.target.value)}
+                    className={fieldClasses}
+                    required
+                  >
+                    <option value="">카테고리를 선택하세요</option>
+                    {categoryOptions.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </FormSection>
 
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-slate-700"
-              >
-                상품 설명 *
-              </label>
-              <button
-                type="button"
-                onClick={handleGenerateDescription}
+            <FormSection title="상품 설명">
+              <div className="flex items-center justify-between">
+                <label htmlFor="description" className="text-sm font-semibold text-text-muted">
+                  자세히 적을수록 잘 팔려요
+                </label>
+                <button
+                  type="button"
+                  onClick={handleGenerateDescription}
+                  disabled={isGeneratingDescription || isSubmitting}
+                  className="flex items-center gap-1.5 rounded-button bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {isGeneratingDescription ? "AI가 작성 중..." : "AI로 설명 쓰기"}
+                </button>
+              </div>
+              <textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
                 disabled={isGeneratingDescription || isSubmitting}
-                className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-medium text-white transition-all hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                {isGeneratingDescription ? "AI가 작성 중..." : "AI로 설명 쓰기"}
-              </button>
-            </div>
-            <textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              disabled={isGeneratingDescription || isSubmitting}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500 disabled:bg-slate-50"
-              rows={8}
-              placeholder="상품에 대한 자세한 설명을 입력하세요"
-              required
-            />
-          </div>
+                className={fieldClasses}
+                rows={8}
+                placeholder="상품에 대한 자세한 설명을 입력하세요"
+                required
+              />
+            </FormSection>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              거래 희망 장소 *
-            </label>
-            <KakaoMapPicker initialLocation={tradeLocation} onChange={setTradeLocation} />
-          </div>
+            <FormSection title="거래 희망 장소">
+              <KakaoMapPicker initialLocation={tradeLocation} onChange={setTradeLocation} />
+            </FormSection>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              기존 이미지
-            </label>
-            {remainingImageUrls.length > 0 ? (
-              <div className="flex flex-wrap gap-3">
-                {remainingImageUrls.map((imageUrl, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={getImageUrl(imageUrl)}
-                      alt={`기존 이미지 ${index + 1}`}
-                      className="h-24 w-24 rounded-lg object-cover border border-slate-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExistingImage(imageUrl)}
-                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                      ×
-                    </button>
+            <FormSection title="사진">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-text-muted">
+                  기존 이미지
+                </label>
+                {remainingImageUrls.length > 0 ? (
+                  <div className="flex flex-wrap gap-3">
+                    {remainingImageUrls.map((imageUrl, index) => (
+                      <div key={index} className="group relative">
+                        <img
+                          src={getImageUrl(imageUrl)}
+                          alt={`기존 이미지 ${index + 1}`}
+                          className="h-24 w-24 rounded-field border border-border object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExistingImage(imageUrl)}
+                          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-sm text-text-faint">기존 이미지가 없습니다.</p>
+                )}
               </div>
-            ) : (
-              <p className="text-sm text-slate-500">기존 이미지가 없습니다.</p>
-            )}
-          </div>
 
-          <div>
-            <label
-              htmlFor="newImages"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              새 이미지 추가
-            </label>
-            <input
-              id="newImages"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleAddNewImages}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500"
-            />
-            {newImages.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-3">
-                {newImages.map((file, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`새 이미지 ${index + 1}`}
-                      className="h-24 w-24 rounded-lg object-cover border border-slate-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveNewImage(index)}
-                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                      ×
-                    </button>
+              <div>
+                <label htmlFor="newImages" className="mb-2 block text-sm font-semibold text-text-muted">
+                  새 이미지 추가
+                </label>
+                <input
+                  id="newImages"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleAddNewImages}
+                  className="block w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text-muted file:mr-3 file:rounded-field file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-accent-strong"
+                />
+                {newImages.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {newImages.map((file, index) => (
+                      <div key={index} className="group relative">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`새 이미지 ${index + 1}`}
+                          className="h-24 w-24 rounded-field border border-border object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveNewImage(index)}
+                          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
+            </FormSection>
           </div>
 
-          <div className="flex gap-4">
-            <button
+          {/* 제출 버튼 — 모바일에서는 화면 하단에 고정 */}
+          <div className="fixed inset-x-0 bottom-0 z-20 flex gap-3 border-t border-border bg-surface/95 p-4 backdrop-blur md:static md:mt-8 md:border-0 md:bg-transparent md:p-0">
+            <Button
               type="button"
+              variant="secondary"
+              size="lg"
               onClick={() => router.back()}
-              className="flex-1 rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50"
+              className="flex-1"
             >
               취소
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="lg"
               disabled={isSubmitting}
-              className="flex-1 rounded-lg bg-slate-900 px-4 py-3 text-sm text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1"
             >
               {isSubmitting ? "수정 중..." : "상품 수정하기"}
-            </button>
+            </Button>
           </div>
         </form>
       </main>
