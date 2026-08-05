@@ -37,14 +37,19 @@ public class ReviewService {
             throw new IllegalStateException("구매자만 리뷰를 작성할 수 있습니다.");
         }
 
+        // 3. 이미 리뷰를 작성한 거래인지 확인
+        if (reviewRepository.existsByProductIdAndWriterId(productId, writerId)) {
+            throw new IllegalStateException("이미 리뷰를 작성한 거래입니다.");
+        }
+
         User writer = product.getBuyer();
         User target = product.getSeller();
 
-        // 3. 리뷰 저장
+        // 4. 리뷰 저장
         Review review = Review.create(product, writer, target, request.getRating(), request.getContent());
         reviewRepository.save(review);
 
-        // 4. 판매자의 신뢰 지수(매너 온도) 업데이트
+        // 5. 판매자의 신뢰 지수(매너 온도) 업데이트
         updateUserTrustScore(target);
     }
 

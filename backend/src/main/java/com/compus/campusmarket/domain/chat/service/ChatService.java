@@ -12,6 +12,7 @@ import com.compus.campusmarket.domain.product.repository.ProductRepository;
 import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ChatRoomCreationService chatRoomCreationService;
 
     @Transactional
     public ChatRoomResponse createOrGetRoom(Long productId, Long buyerId) {
@@ -39,20 +41,23 @@ public class ChatService {
             throw new IllegalStateException("본인 상품에는 채팅을 시작할 수 없습니다.");
         }
 
-        List<ChatRoom> existingRooms = chatRoomRepository.findByProductIdAndBuyerId(productId, buyerId);
-        ChatRoom room;
+        User buyer = userRepository.findById(buyerId)
+                .orElseThrow(() -> new IllegalArgumentException("구매자 정보가 올바르지 않습니다."));
 
-        if (!existingRooms.isEmpty()) {
-            room = existingRooms.get(0);
-        } else {
-            User buyer = userRepository.findById(buyerId)
-                    .orElseThrow(() -> new IllegalArgumentException("구매자 정보가 올바르지 않습니다."));
-            ChatRoom newRoom = ChatRoom.builder()
-                    .product(product)
-                    .seller(product.getSeller())
-                    .buyer(buyer)
-                    .build();
-            room = chatRoomRepository.save(newRoom);
+        // 조회와 생성을 모두 ChatRoomCreationService의 REQUIRES_NEW 트랜잭션 안에서 한다.
+        // 이 메서드(createOrGetRoom) 자신의 트랜잭션에서 미리 조회해버리면, 그 조회가 REPEATABLE READ
+        // 스냅샷을 고정시켜서 — 아래 catch에서 재조회해도 같은(고정된) 트랜잭션 안이라 방금 다른
+        // 트랜잭션이 커밋한 방이 안 보이는 문제가 있었다(실측으로 확인: 재조회가 매번 빈 결과를 내서
+        // 경쟁에서 진 요청이 전부 예외로 실패). REQUIRES_NEW로 매 시도마다 새 트랜잭션을 열면
+        // 그때마다 스냅샷도 새로 잡혀서 방금 커밋된 방을 확실히 보게 된다.
+        ChatRoom room;
+        try {
+            room = chatRoomCreationService.getOrCreateRoom(product, product.getSeller(), buyer);
+        } catch (DataIntegrityViolationException e) {
+            // 조회~생성 사이(Check-Then-Act)에 동시 요청이 먼저 방을 만든 경우 —
+            // unique 제약(product_id, buyer_id)에 걸려 여기로 온다. 새 트랜잭션으로 한 번 더
+            // 시도하면(이번엔 생성이 아니라 조회로 끝남) 방금 커밋된 방을 그대로 돌려받는다.
+            room = chatRoomCreationService.getOrCreateRoom(product, product.getSeller(), buyer);
         }
 
         String lastMessage = getLastMessage(room.getId());

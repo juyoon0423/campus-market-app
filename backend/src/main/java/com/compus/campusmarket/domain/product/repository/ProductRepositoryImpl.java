@@ -54,8 +54,12 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     }
 
     private BooleanExpression eqStatus(ProductStatus status) {
-        // status가 null이거나 유효하지 않은 값이 들어오는 경우를 대비
-        return status != null ? product.status.eq(status) : null;
+        // status 파라미터가 없으면(전체 상태) 판매중/예약중만 노출하고, SOLD_OUT은 명시적으로
+        // status=SOLD_OUT을 요청했을 때만 보여준다. 홈 화면이 이 메서드를 기본 목록 조회로
+        // 쓰기 때문에 findActiveProducts()와 동일한 기본 필터를 적용해야 한다.
+        return status != null
+                ? product.status.eq(status)
+                : product.status.in(ProductStatus.SELLING, ProductStatus.RESERVED);
     }
 
     // 카테고리 일치 조건 (엔티티에 category 필드가 있다는 가정 하에)

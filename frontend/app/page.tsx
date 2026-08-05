@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Eye, Heart } from "lucide-react";
 import { useAuth } from "@/src/context/AuthContext";
-import { getAllProducts, searchProducts } from "@/src/lib/apis/productApi";
+import { searchProducts } from "@/src/lib/apis/productApi";
 import type { ProductListResponse, ProductStatus } from "@/src/types/product";
 
 function getImageUrl(representativeImageUrl?: string | null) {
@@ -35,7 +35,7 @@ export default function HomePage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await getAllProducts();
+        const response = await searchProducts({});
         setProducts(response);
       } catch {
         setErrorMessage("상품 목록을 불러오지 못했습니다.");
@@ -73,7 +73,7 @@ export default function HomePage() {
     setErrorMessage("");
 
     try {
-      const result = await getAllProducts();
+      const result = await searchProducts({});
       setProducts(result);
     } catch {
       setErrorMessage("상품 목록을 불러오지 못했습니다.");

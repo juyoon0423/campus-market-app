@@ -37,7 +37,7 @@ export default function ProductEditPage() {
   const router = useRouter();
   const productId = Number(params.id);
   const isInvalidProductId = Number.isNaN(productId);
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isHydrated } = useAuth();
 
   const [product, setProduct] = useState<ProductDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +63,10 @@ export default function ProductEditPage() {
   const categoryOptions = ["학업 관련", "디지털/가전", "생활/자취", "기타"];
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
     if (!isLoggedIn) {
       router.push("/login");
       return;
@@ -121,7 +125,7 @@ export default function ProductEditPage() {
     };
 
     fetchProduct();
-  }, [productId, isInvalidProductId, isLoggedIn, router]);
+  }, [isHydrated, productId, isInvalidProductId, isLoggedIn, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

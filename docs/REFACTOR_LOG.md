@@ -157,10 +157,66 @@ Claude Code(Explore 서브에이전트 2개, 백엔드/프론트 각각)로 문�
 - 이번 점검에서 새로 찾았지만 이번 세션 범위 밖이라 아직 안 고친 것은
   `docs/BUGFIX_TODO.md`에 정리해둠.
 
+### 8) 상품 수정 페이지 새로고침 시 로그인 화면으로 튕기는 버그 수정
+`docs/BUGFIX_TODO.md`의 🔴 1번. `frontend/app/products/[id]/edit/page.tsx`가 `AuthContext`의
+`isHydrated`를 기다리지 않고 `isLoggedIn`만으로 즉시 `/login`으로 리다이렉트해서, 새로고침/URL
+직접 진입처럼 컴포넌트가 처음부터 마운트되는 경우 hydration 전 순간에 항상 리다이렉트가
+발생했음. `useAuth()`에서 `isHydrated`를 추가로 꺼내 `!isHydrated`면 아무 것도 하지 않고
+리턴하도록 수정(`frontend/app/upload/page.tsx`와 동일한 패턴). 로그인 후 상품 수정 페이지에서
+새로고침해도 페이지가 유지되는지 브라우저로 재현/검증 완료.
+
+### 9) 메인 페이지 조회 페이지네이션 없음 + SOLD_OUT 노출 문제 수정
+`docs/SECURITY_REFACTOR_TODO.md`의 🟡 3번. 홈 화면(`frontend/app/page.tsx`)이 페이지네이션·
+N+1 방지가 없는 `getAllProducts()`(`GET /api/products`)를 호출하고 있어서, 이미 그 문제가 해결돼
+있던 `/api/products/search` 경로를 안 쓰고 있었음.
+- **프론트**: `fetchProducts`/`handleReset`이 `getAllProducts()` 대신 `searchProducts({})`를
+  호출하도록 변경. 더 이상 쓰이지 않는 `getAllProducts` 클라이언트 함수는 삭제(백엔드
+  `GET /api/products` 엔드포인트 자체는 건드리지 않음 — 범위 밖).
+- **백엔드**: `search()`(`ProductRepositoryImpl.eqStatus`)는 status 파라미터가 없으면 필터를
+  아예 안 걸어서 SOLD_OUT 상품까지 노출되는 문제가 있었음. status가 null이면
+  `product.status.in(SELLING, RESERVED)`로 기본 필터링하도록 수정(`findActiveProducts()`와
+  동일한 기본값). status=SOLD_OUT을 명시적으로 요청하면 여전히 조회 가능.
+- `ProductServiceTest`에 상태 미지정 시 판매완료 상품이 제외되고, 명시적으로 SOLD_OUT을
+  요청하면 조회되는지 검증하는 케이스 추가. 브라우저로 홈 화면에서 SOLD_OUT 상품이 기본
+  목록엔 안 보이고 "판매완료" 필터를 걸면 보이는지 재현/검증 완료.
+
+### 10) 리뷰 중복 작성 차단
+`docs/SECURITY_REFACTOR_TODO.md`의 🟡 4번. `ReviewRepository.existsByProductIdAndWriterId`가
+정의만 돼 있고 `ReviewService.writeReview`에서 호출되지 않아 같은 거래에 리뷰를 여러 번 작성할
+수 있었음. 구매자/상태 검증 다음, 리뷰 저장 앞에 중복 여부 가드를 추가해
+`IllegalStateException("이미 리뷰를 작성한 거래입니다.")`를 던지도록 수정
+(`GlobalExceptionHandler`가 기존에 이미 `IllegalStateException`을 409로 매핑하고 있어서 별도
+예외 처리 추가는 불필요했음). `ReviewServiceTest` 신규 작성(같은 거래에 두 번째 리뷰 시도 시
+거부되는지 검증). 실제 서버에 로그인 후 리뷰 작성 API를 두 번 호출해 1차는 200, 2차는 409로
+거부되는지 curl로 재현/검증 완료(테스트로 만든 상품은 정리함).
+
+### 11) 채팅방 중복 생성 레이스 수정
+`docs/SECURITY_REFACTOR_TODO.md`의 📎 7번(`frontend/BACKEND_IMPROVEMENTS.md`에 이미 분석돼
+있던 문제). `ChatService.createOrGetRoom`이 조회 후 없으면 생성하는 락 없는 Check-Then-Act라,
+동시에 같은 (상품, 구매자) 조합으로 요청이 들어오면 채팅방이 여러 개 생성될 수 있었음.
+- `ChatRoom`에 `(product_id, buyer_id)` unique 제약 추가(`ProductLike`와 동일한 패턴).
+- 신규 `ChatRoomCreationService.getOrCreateRoom`(REQUIRES_NEW)으로 "조회 후 없으면 생성"을
+  통째로 격리. `ChatService.createOrGetRoom`은 이걸 호출하고, `DataIntegrityViolationException`
+  (경쟁에서 진 경우)을 잡으면 같은 메서드를 한 번 더 호출해 재시도.
+- **디버깅 중 발견한 두 가지 함정**(둘 다 처음 구현엔 있었고 테스트로 잡아서 고침):
+  1. 처음엔 조회를 outer 트랜잭션에서 먼저 하고 실패 시에만 재조회했는데, REPEATABLE READ
+     스냅샷이 outer 트랜잭션 시작 시점에 고정돼서 재조회해도 경쟁에서 이긴 다른 트랜잭션이
+     방금 커밋한 방이 안 보였음(재현 테스트에서 10개 중 9개가 실패). 조회+생성을 전부
+     REQUIRES_NEW 안에서 하고 실패 시 그 메서드 전체를 재호출(=새 트랜잭션 재시작)하도록
+     바꿔서 매 시도마다 스냅샷이 새로 잡히게 함.
+  2. 그다음엔 `LazyInitializationException`(no session)이 남음 — REQUIRES_NEW 메서드가
+     끝나며 세션이 닫히는데, "이미 존재하는 방"을 조회로 찾은 경우 `ChatRoom.product`/
+     `seller`/`buyer`가 지연 로딩 프록시라 세션이 닫힌 뒤 `ChatRoomResponse` 생성자에서
+     접근하면 터짐(방금 생성한 경우는 이미 로드된 엔티티를 그대로 써서 문제 없었음 — "조회로
+     찾은 경우"에서만 재현됨). `ChatRoomRepository.findByProductIdAndBuyerIdWithAssociations`
+     (JOIN FETCH)로 바꿔서 세션이 닫히기 전에 연관 엔티티를 실제로 채워오도록 수정.
+- `ChatServiceTest`에 동시 요청 10개를 쏴서 채팅방이 정확히 1개만 생성되는지 검증하는 테스트
+  추가(초기 구현에서 위 두 함정을 이 테스트가 실제로 잡아냄). 실제 서버에도 동일 상품/구매자로
+  curl 10개를 동시에 쏴서 전부 같은 roomId를 받고 DB에도 행이 1개만 남는지 재현/검증 완료.
+
 ## 진행 중 / 다음에 할 일
 
-1. **`docs/BUGFIX_TODO.md`** — 이번 세션 실기동 점검 중 발견한 버그/미완성 기능. 다음 세션은
-   여기부터 시작하면 됨.
-2. `docs/SECURITY_REFACTOR_TODO.md` 참고. 🔴 Critical 2건은 완료했고, 다음은 🟡 3(메인 페이지
-   페이지네이션/N+1), 4(리뷰 중복 작성 차단) 순서로 진행하면 됨. "채팅방 중복 생성 레이스"
-   (`TODO`의 7번 항목)는 아직 미착수.
+1. **`docs/BUGFIX_TODO.md`** — 🔴 1번은 완료. 남은 건 🟡 2번(리뷰 작성 프론트엔드 UI 부재,
+   버그 아닌 미구현 기능 — 구현 여부는 아직 미결정).
+2. `docs/SECURITY_REFACTOR_TODO.md` 참고. 🔴 Critical 2건, 🟡 3·4번(페이지네이션, 리뷰 중복
+   작성 차단), 📎 7번(채팅방 중복 생성 레이스)까지 모두 완료. 남은 건 🟢 5·6번(선택)뿐.

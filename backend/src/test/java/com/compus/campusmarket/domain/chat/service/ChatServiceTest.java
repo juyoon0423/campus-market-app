@@ -16,8 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -118,6 +124,57 @@ class ChatServiceTest {
         } finally {
             userRepository.deleteById(stranger.getId());
         }
+    }
+
+    // Check-Then-Act 레이스로 같은 (product, buyer) 조합의 채팅방이 여러 개 생성되던 문제
+    // (frontend/BACKEND_IMPROVEMENTS.md에 분석돼 있던 것) 재현 + 수정 검증.
+    @Test
+    void createOrGetRoom_동시_요청에도_채팅방은_하나만_생성된다() throws InterruptedException {
+        User raceSeller = userRepository.save(newUser("raceSeller"));
+        User raceBuyer = userRepository.save(newUser("raceBuyer"));
+        Product raceProduct = productRepository.save(
+                Product.create("동시성 채팅방 테스트 상품", "설명", 1000L, raceSeller, "카테고리"));
+
+        int concurrency = 10;
+        List<Long> resultRoomIds = Collections.synchronizedList(new ArrayList<>());
+        ExecutorService executor = Executors.newFixedThreadPool(concurrency);
+        CountDownLatch ready = new CountDownLatch(concurrency);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(concurrency);
+
+        try {
+            for (int i = 0; i < concurrency; i++) {
+                executor.submit(() -> {
+                    ready.countDown();
+                    try {
+                        start.await();
+                        ChatRoomResponse response = chatService.createOrGetRoom(raceProduct.getId(), raceBuyer.getId());
+                        resultRoomIds.add(response.getId());
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        done.countDown();
+                    }
+                });
+            }
+            ready.await();
+            start.countDown();
+            done.await(20, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(resultRoomIds).hasSize(concurrency);
+        assertThat(resultRoomIds.stream().distinct().count()).isEqualTo(1);
+
+        List<ChatRoom> persistedRooms =
+                chatRoomRepository.findByProductIdAndBuyerId(raceProduct.getId(), raceBuyer.getId());
+        assertThat(persistedRooms).hasSize(1);
+
+        chatRoomRepository.deleteById(persistedRooms.get(0).getId());
+        productRepository.deleteById(raceProduct.getId());
+        userRepository.deleteById(raceSeller.getId());
+        userRepository.deleteById(raceBuyer.getId());
     }
 
     private User newUser(String tag) {

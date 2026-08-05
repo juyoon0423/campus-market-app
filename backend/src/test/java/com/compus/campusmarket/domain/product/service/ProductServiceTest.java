@@ -9,6 +9,7 @@ import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
 import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductLike;
+import com.compus.campusmarket.domain.product.entity.ProductStatus;
 import com.compus.campusmarket.domain.product.repository.ProductLikeRepository;
 import com.compus.campusmarket.domain.product.repository.ProductRepository;
 import com.compus.campusmarket.domain.product.review.entity.Review;
@@ -19,11 +20,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -139,6 +143,45 @@ class ProductServiceTest {
         assertThat(detail.getTradeLocationName()).isEqualTo("새 장소");
         assertThat(detail.getTradeLatitude()).isEqualTo(37.5);
         assertThat(detail.getTradeLongitude()).isEqualTo(127.5);
+    }
+
+    @Test
+    void 검색시_상태를_지정하지_않으면_판매완료_상품은_제외된다() {
+        User seller = userRepository.save(newUser("seller"));
+        createdUserIds.add(seller.getId());
+        String keyword = "검색키워드-" + UUID.randomUUID();
+
+        Long sellingId = createProduct(seller.getId(), keyword + " 판매중 상품");
+        Long soldOutId = createProduct(seller.getId(), keyword + " 판매완료 상품");
+        createdProductIds.add(sellingId);
+        createdProductIds.add(soldOutId);
+        productService.updateStatus(soldOutId, seller.getId(), ProductStatus.SOLD_OUT);
+
+        Pageable pageable = PageRequest.of(0, 20);
+
+        List<Long> defaultResultIds = productService.search(keyword, null, null, null, pageable).stream()
+                .map(response -> response.getId())
+                .collect(Collectors.toList());
+        assertThat(defaultResultIds).containsExactly(sellingId);
+
+        List<Long> soldOutResultIds = productService.search(keyword, null, ProductStatus.SOLD_OUT, null, pageable)
+                .stream()
+                .map(response -> response.getId())
+                .collect(Collectors.toList());
+        assertThat(soldOutResultIds).containsExactly(soldOutId);
+    }
+
+    private Long createProduct(Long sellerId, String title) {
+        ProductCreateRequest request = new ProductCreateRequest();
+        request.setTitle(title);
+        request.setDescription("설명");
+        request.setPrice(10_000L);
+        request.setCategory("전자기기");
+        request.setTradeLocationName("학생회관 앞");
+        request.setTradeLatitude(37.360);
+        request.setTradeLongitude(127.972);
+
+        return productService.createProduct(sellerId, request, Collections.emptyList());
     }
 
     private User newUser(String tag) {

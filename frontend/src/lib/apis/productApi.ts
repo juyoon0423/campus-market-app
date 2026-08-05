@@ -62,11 +62,6 @@ export async function getMyProducts(): Promise<ProductListResponse[]> {
   return response.data;
 }
 
-export async function getAllProducts(): Promise<ProductListResponse[]> {
-  const response = await api.get<ProductListResponse[]>("/api/products");
-  return response.data;
-}
-
 export async function getProduct(productId: number): Promise<ProductDetailResponse> {
   const response = await api.get<ProductDetailResponse>(`/api/products/${productId}`);
   return response.data;
