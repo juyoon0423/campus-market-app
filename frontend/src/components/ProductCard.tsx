@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Eye, Heart } from "lucide-react";
@@ -18,12 +19,14 @@ export default function ProductCard({
   return (
     <div className="group overflow-hidden rounded-card border border-border bg-surface shadow-soft transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated">
       <Link href={`/products/${product.id}`}>
-        <div className="aspect-square w-full overflow-hidden bg-surface-alt">
+        <div className="relative aspect-square w-full overflow-hidden bg-surface-alt">
           {imageUrl ? (
-            <img
+            <Image
               src={imageUrl}
               alt={product.title}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-text-faint">

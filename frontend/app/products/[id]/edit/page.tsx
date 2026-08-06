@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronLeft, Sparkles } from "lucide-react";
@@ -386,11 +387,13 @@ export default function ProductEditPage() {
                 {remainingImageUrls.length > 0 ? (
                   <div className="flex flex-wrap gap-3">
                     {remainingImageUrls.map((imageUrl, index) => (
-                      <div key={index} className="group relative">
-                        <img
+                      <div key={index} className="group relative h-24 w-24">
+                        <Image
                           src={getImageUrl(imageUrl)}
                           alt={`기존 이미지 ${index + 1}`}
-                          className="h-24 w-24 rounded-field border border-border object-cover"
+                          fill
+                          sizes="96px"
+                          className="rounded-field border border-border object-cover"
                         />
                         <button
                           type="button"
@@ -423,6 +426,7 @@ export default function ProductEditPage() {
                   <div className="mt-3 flex flex-wrap gap-3">
                     {newImages.map((file, index) => (
                       <div key={index} className="group relative">
+                        {/* blob: URL이라 next/image 최적화 대상이 아님(서버가 fetch할 수 없음) — 그대로 둔다 */}
                         <img
                           src={URL.createObjectURL(file)}
                           alt={`새 이미지 ${index + 1}`}

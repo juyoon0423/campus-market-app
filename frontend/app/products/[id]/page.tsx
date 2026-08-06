@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Eye, Heart, MoreVertical, ChevronDown, ChevronLeft } from "lucide-react";
 import { AxiosError } from "axios";
+import Image from "next/image";
 import { useAuth } from "@/src/context/AuthContext";
 import { deleteProduct, getProduct, toggleLike, updateProductStatus } from "@/src/lib/apis/productApi";
 import { createOrGetChatRoom, getProductChatRooms } from "@/src/lib/apis/chatApi";
@@ -385,12 +386,15 @@ export default function ProductDetailPage() {
         <div className="grid gap-8 md:grid-cols-2 md:gap-10">
           {/* Left column: Image gallery */}
           <div className="space-y-3">
-            <div className="aspect-square w-full overflow-hidden rounded-card bg-surface-alt">
+            <div className="relative aspect-square w-full overflow-hidden rounded-card bg-surface-alt">
               {resolvedImageUrls.length > 0 ? (
-                <img
+                <Image
                   src={resolvedImageUrls[activeImageIndex]}
                   alt={product.title}
-                  className="h-full w-full object-contain"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                  className="object-contain"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-text-faint">
@@ -406,12 +410,12 @@ export default function ProductDetailPage() {
                     key={url + index}
                     type="button"
                     onClick={() => setActiveImageIndex(index)}
-                    className={`h-16 w-16 shrink-0 overflow-hidden rounded-field border-2 transition-colors ${
+                    className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-field border-2 transition-colors ${
                       index === activeImageIndex ? "border-accent" : "border-transparent"
                     }`}
                     aria-label={`${index + 1}번째 상품 이미지 보기`}
                   >
-                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    <Image src={url} alt="" fill sizes="64px" className="object-cover" />
                   </button>
                 ))}
               </div>
