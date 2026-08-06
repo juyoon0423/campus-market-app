@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Eye, Heart, MoreVertical, ChevronDown, ChevronLeft } from "lucide-react";
+import { AxiosError } from "axios";
 import { useAuth } from "@/src/context/AuthContext";
-import { getProduct, toggleLike } from "@/src/lib/apis/productApi";
+import { deleteProduct, getProduct, toggleLike, updateProductStatus } from "@/src/lib/apis/productApi";
 import { createOrGetChatRoom, getProductChatRooms } from "@/src/lib/apis/chatApi";
 import type { ProductDetailResponse, ProductStatus } from "@/src/types/product";
 import type { ChatRoomResponse } from "@/src/types/chat";
@@ -55,11 +56,9 @@ export default function ProductDetailPage() {
       const payload = token.split('.')[1];
       if (!payload) return null;
       const decoded = JSON.parse(atob(payload));
-      console.log("JWT 디코딩 결과:", decoded);  // 디버깅용
       const userId = decoded.userId || decoded.sub || null;
-      return userId ? Number(userId) : null;  // ⚠️ 숫자로 변환
-    } catch (error) {
-      console.error('JWT decode error:', error);
+      return userId ? Number(userId) : null;
+    } catch {
       return null;
     }
   };
@@ -67,27 +66,6 @@ export default function ProductDetailPage() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   const currentUserId = getUserIdFromToken(token);
   const isSeller = !!(currentUserId && product?.sellerId === currentUserId);
-
-  // 판매자 인식 디버깅 로그
-  console.log("=== 판매자 인식 디버깅 ===");
-  console.log("1. 기본 정보:", {
-    isLoggedIn,
-    isHydrated,
-    token: token ? "있음" : "없음",
-    currentUserId,
-    productId
-  });
-  console.log("2. 상품 정보:", {
-    productExists: !!product,
-    productTitle: product?.title,
-    sellerId: product?.sellerId,
-    sellerName: product?.sellerName
-  });
-  console.log("3. 판매자 확인:", {
-    isSeller,
-    comparison: `currentUserId(${currentUserId}) === sellerId(${product?.sellerId})`,
-    shouldShowDropdown: isHydrated && isLoggedIn && isSeller
-  });
 
   useEffect(() => {
     if (isInvalidProductId) {
@@ -136,55 +114,15 @@ export default function ProductDetailPage() {
       return;
     }
 
-    console.log("Status Change - Starting:", {
-      productId: product.id,
-      currentStatus: product.status,
-      newStatus,
-      currentUserId
-    });
-
     setIsStatusUpdating(true);
     setStatusError("");
 
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setStatusError("로그인이 필요합니다.");
-        return;
-      }
-
-      const response = await fetch(`http://localhost:8080/api/products/${product.id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: newStatus,
-          buyerId: buyerId || null  // SOLD_OUT일 때만 buyerId 전달
-        }),
-      });
-
-      console.log("Status Change - Response:", response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Status Change - Error:", errorText);
-
-        if (response.status === 403) {
-          setStatusError("상품 상태를 변경할 권한이 없습니다.");
-        } else if (response.status === 400) {
-          setStatusError("요청 형식이 올바르지 않습니다.");
-        } else {
-          setStatusError(`상태 변경에 실패했습니다 (${response.status}).`);
-        }
-        return;
-      }
+      await updateProductStatus(product.id, newStatus, buyerId);
 
       // 상품 정보 새로고침
       const updatedProduct = await getProduct(product.id);
       setProduct(updatedProduct);
-      console.log("Status Change - Product updated successfully");
 
       // SOLD_OUT 모달 닫기
       if (newStatus === "SOLD_OUT") {
@@ -193,8 +131,13 @@ export default function ProductDetailPage() {
         setStatusError("");
       }
     } catch (error) {
-      console.error("Status Change - Exception:", error);
-      setStatusError("상태 변경에 실패했습니다.");
+      if (error instanceof AxiosError && error.response?.status === 403) {
+        setStatusError("상품 상태를 변경할 권한이 없습니다.");
+      } else if (error instanceof AxiosError && error.response?.status === 400) {
+        setStatusError("요청 형식이 올바르지 않습니다.");
+      } else {
+        setStatusError("상태 변경에 실패했습니다.");
+      }
     } finally {
       setIsStatusUpdating(false);
       setIsDropdownOpen(false);
@@ -233,33 +176,15 @@ export default function ProductDetailPage() {
     setDeleteError("");
 
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setDeleteError("로그인이 필요합니다.");
-        return;
-      }
-
-      const response = await fetch(`http://localhost:8080/api/products/${product.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 403) {
-          setDeleteError("상품을 삭제할 권한이 없습니다.");
-        } else {
-          setDeleteError("상품 삭제에 실패했습니다.");
-        }
-        return;
-      }
-
+      await deleteProduct(product.id);
       alert("상품이 성공적으로 삭제되었습니다.");
       router.push("/");
     } catch (error) {
-      console.error("Delete Product - Exception:", error);
-      setDeleteError("상품 삭제에 실패했습니다.");
+      if (error instanceof AxiosError && error.response?.status === 403) {
+        setDeleteError("상품을 삭제할 권한이 없습니다.");
+      } else {
+        setDeleteError("상품 삭제에 실패했습니다.");
+      }
     } finally {
       setIsDeleting(false);
       setIsDropdownOpen(false);

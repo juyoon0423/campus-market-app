@@ -57,6 +57,17 @@ export async function deleteProduct(productId: number): Promise<string> {
   return response.data;
 }
 
+export async function updateProductStatus(
+  productId: number,
+  status: ProductStatus,
+  buyerId?: number,
+): Promise<void> {
+  await api.patch(`/api/products/${productId}/status`, {
+    status,
+    buyerId: buyerId ?? null,
+  });
+}
+
 export async function getMyProducts(): Promise<ProductListResponse[]> {
   const response = await api.get<ProductListResponse[]>("/api/products/me");
   return response.data;
