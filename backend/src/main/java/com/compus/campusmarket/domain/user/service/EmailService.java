@@ -6,6 +6,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,10 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class EmailService {
 
+    // 코드가 만료 없이 무한정 유효하면(예전 구현) 브루트포스 공격에 취약해진다.
+    private static final Duration CODE_TTL = Duration.ofMinutes(5);
+
     private final JavaMailSender mailSender;
 
     // 이메일 - 인증코드 저장소 (실무에서는 Redis 사용 권장)
-    private final Map<String, String> verificationCodes = new ConcurrentHashMap<>();
+    private final Map<String, VerificationEntry> verificationCodes = new ConcurrentHashMap<>();
     // 인증 완료된 이메일 저장소
     private final Map<String, Boolean> verifiedEmails = new ConcurrentHashMap<>();
 
@@ -30,7 +35,7 @@ public class EmailService {
         }
 
         String code = generateRandomCode();
-        verificationCodes.put(email, code); // 발급된 코드 저장
+        verificationCodes.put(email, new VerificationEntry(code, Instant.now().plus(CODE_TTL))); // 발급된 코드 저장
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
@@ -43,14 +48,31 @@ public class EmailService {
 
     // 2. 인증 코드 검증
     public boolean verifyCode(String email, String code) {
-        String savedCode = verificationCodes.get(email);
+        VerificationEntry entry = verificationCodes.get(email);
 
-        if (savedCode != null && savedCode.equals(code)) {
-            verificationCodes.remove(email); // 인증 성공 시 코드 삭제
-            verifiedEmails.put(email, true); // 인증 완료 상태로 변경
-            return true;
+        if (entry == null || entry.isExpired()) {
+            verificationCodes.remove(email); // 만료된 코드는 더 이상 유효하지 않으니 정리
+            return false;
         }
-        return false;
+
+        if (!entry.code().equals(code)) {
+            return false;
+        }
+
+        verificationCodes.remove(email); // 인증 성공 시 코드 삭제
+        verifiedEmails.put(email, true); // 인증 완료 상태로 변경
+        return true;
+    }
+
+    // 테스트에서 만료된 코드를 재현하기 위한 헬퍼(패키지 전용, 운영 코드에서는 쓰지 않음)
+    void putVerificationCodeForTest(String email, String code, Instant expiresAt) {
+        verificationCodes.put(email, new VerificationEntry(code, expiresAt));
+    }
+
+    private record VerificationEntry(String code, Instant expiresAt) {
+        boolean isExpired() {
+            return Instant.now().isAfter(expiresAt);
+        }
     }
 
     // 3. 회원가입 시 최종 인증 여부 확인
