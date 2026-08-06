@@ -21,8 +21,14 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     // 파라미터에 Pageable 추가
     @Override
     public List<Product> searchProducts(String keyword, String category, ProductStatus status, Pageable pageable) {
+        // seller는 ManyToOne이라 fetch join해도 row가 늘어나지 않아 offset/limit 페이징과 함께
+        // 써도 안전하다(=N+1 없이 판매자 이름을 즉시 로드). images는 OneToMany라 여기서
+        // fetch join하면 컬렉션과 페이징을 동시에 쓸 때 Hibernate가 메모리에서 페이징을 적용해
+        // 페이지 크기만큼만 가져오는 게 깨진다 — 대신 application.yml의
+        // default_batch_fetch_size(=100)가 지연 로딩된 images를 IN절로 일괄 조회해준다.
         return queryFactory
                 .selectFrom(product)
+                .leftJoin(product.seller).fetchJoin()
                 .where(
                         containKeyword(keyword),
                         eqCategory(category),
