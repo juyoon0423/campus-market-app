@@ -292,6 +292,9 @@ export default function ProductDetailPage() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-field text-text-muted transition-colors hover:bg-surface-alt hover:text-text"
                 disabled={isStatusUpdating || isDeleting}
+                aria-label="상품 관리 메뉴"
+                aria-haspopup="true"
+                aria-expanded={isDropdownOpen}
               >
                 <MoreVertical className="h-5 w-5" />
               </button>
@@ -406,6 +409,7 @@ export default function ProductDetailPage() {
                     className={`h-16 w-16 shrink-0 overflow-hidden rounded-field border-2 transition-colors ${
                       index === activeImageIndex ? "border-accent" : "border-transparent"
                     }`}
+                    aria-label={`${index + 1}번째 상품 이미지 보기`}
                   >
                     <img src={url} alt="" className="h-full w-full object-cover" />
                   </button>

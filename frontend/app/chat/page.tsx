@@ -443,6 +443,7 @@ function ChatPageContent() {
                 type="button"
                 onClick={() => setSelectedRoomId(null)}
                 className="-ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-text-muted hover:bg-surface-alt md:hidden"
+                aria-label="채팅방 목록으로 돌아가기"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
