@@ -12,8 +12,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -54,13 +52,9 @@ public class ReviewService {
     }
 
     private void updateUserTrustScore(User user) {
-        // 해당 유저가 받은 모든 별점의 평균 계산
-        List<Review> reviews = reviewRepository.findByTarget(user);
-        double average = reviews.stream()
-                .mapToDouble(Review::getRating)
-                .average()
-                .orElse(0.0);
-
-        user.updateTrustScore(average);
+        // 해당 유저가 받은 모든 별점의 평균을 DB에서 직접 집계한다(리뷰 전체를 로드해 Java에서
+        // 평균 내면 리뷰가 많은 유저일수록 매 리뷰 작성마다 부하가 커진다).
+        Double average = reviewRepository.findAverageRatingByTarget(user);
+        user.updateTrustScore(average != null ? average : 0.0);
     }
 }
