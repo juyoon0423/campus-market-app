@@ -26,6 +26,7 @@ export default function MyPage() {
   const [products, setProducts] = useState<ProductListResponse[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
+  const [actionError, setActionError] = useState("");
 
   // Redirect to login if not authenticated (after hydration)
   useEffect(() => {
@@ -59,16 +60,16 @@ export default function MyPage() {
 
   const handleToggleLike = async (productId: number) => {
     const previousProducts = [...products];
+    setActionError("");
 
     // Optimistic update
     setProducts(prev => prev.filter(p => p.id !== productId));
 
     try {
       await toggleLike(productId);
-    } catch (error) {
-      console.error("Toggle like error:", error);
+    } catch {
       setProducts(previousProducts);
-      alert("찜 해제에 실패했습니다.");
+      setActionError("찜 해제에 실패했습니다.");
     }
   };
 
@@ -151,6 +152,12 @@ export default function MyPage() {
                   )}
                 </button>
               </div>
+
+              {actionError ? (
+                <p className="mt-4 rounded-field bg-red-soft px-4 py-3 text-sm text-red-ink">
+                  {actionError}
+                </p>
+              ) : null}
 
               {/* Product List */}
               {productsLoading ? (

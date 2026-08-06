@@ -47,6 +47,7 @@ export default function ProductDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [isLiking, setIsLiking] = useState(false);
+  const [actionError, setActionError] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const hasFetchedProduct = useRef(false);
 
@@ -86,11 +87,12 @@ export default function ProductDetailPage() {
     }
 
     setIsChatLoading(true);
+    setActionError("");
     try {
       const room = await createOrGetChatRoom(productId);
       router.push(`/chat?roomId=${room.id}`);
     } catch {
-      alert("채팅방을 생성할 수 없습니다.");
+      setActionError("채팅방을 생성할 수 없습니다.");
       setIsChatLoading(false);
     }
   };
@@ -181,9 +183,11 @@ export default function ProductDetailPage() {
   const handleToggleLike = async () => {
     if (!product || !product.id) return;
     if (!isLoggedIn) {
-      alert("로그인이 필요합니다.");
+      setActionError("로그인이 필요합니다.");
       return;
     }
+
+    setActionError("");
 
     // Optimistic update: 즉시 UI 업데이트
     const previousIsLiked = product.isLiked;
@@ -200,8 +204,6 @@ export default function ProductDetailPage() {
     try {
       await toggleLike(product.id);
     } catch (error) {
-      console.error("Toggle like error:", error);
-
       // Rollback: 실패 시 원래 상태로 복원
       setProduct(prev => prev ? {
         ...prev,
@@ -209,12 +211,11 @@ export default function ProductDetailPage() {
         likeCount: previousLikeCount,
       } : null);
 
-      // 자신의 상품인 경우 에러 메시지 표시
-      if (error instanceof Error && error.message.includes("자신의 상품")) {
-        alert("자신의 상품은 찜할 수 없습니다.");
-      } else {
-        alert("찜하기에 실패했습니다.");
-      }
+      const serverMessage =
+        error instanceof AxiosError
+          ? (error.response?.data as { message?: string } | undefined)?.message
+          : undefined;
+      setActionError(serverMessage || "찜하기에 실패했습니다.");
     } finally {
       setIsLiking(false);
     }
@@ -418,10 +419,10 @@ export default function ProductDetailPage() {
             <div>
               <h1 className="text-2xl font-extrabold leading-snug text-text">{product.title}</h1>
 
-              {/* 상태 변경 및 삭제 에러 메시지 */}
-              {(statusError || deleteError) && (
+              {/* 상태 변경/삭제/채팅/찜 에러 메시지 */}
+              {(statusError || deleteError || actionError) && (
                 <div className="mt-3 rounded-field bg-red-soft px-4 py-2 text-sm text-red-ink">
-                  {statusError || deleteError}
+                  {statusError || deleteError || actionError}
                 </div>
               )}
             </div>
