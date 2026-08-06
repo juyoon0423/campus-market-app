@@ -8,6 +8,7 @@ import { AxiosError } from "axios";
 import { useAuth } from "@/src/context/AuthContext";
 import { deleteProduct, getProduct, toggleLike, updateProductStatus } from "@/src/lib/apis/productApi";
 import { createOrGetChatRoom, getProductChatRooms } from "@/src/lib/apis/chatApi";
+import { useCurrentUserId } from "@/src/hooks/useCurrentUserId";
 import type { ProductDetailResponse, ProductStatus } from "@/src/types/product";
 import type { ChatRoomResponse } from "@/src/types/chat";
 import KakaoMapView from "@/src/components/KakaoMapView";
@@ -50,21 +51,7 @@ export default function ProductDetailPage() {
   const hasFetchedProduct = useRef(false);
 
   // 현재 사용자가 판매자인지 확인
-  const getUserIdFromToken = (token: string | null): number | null => {
-    if (!token) return null;
-    try {
-      const payload = token.split('.')[1];
-      if (!payload) return null;
-      const decoded = JSON.parse(atob(payload));
-      const userId = decoded.userId || decoded.sub || null;
-      return userId ? Number(userId) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  const currentUserId = getUserIdFromToken(token);
+  const currentUserId = useCurrentUserId();
   const isSeller = !!(currentUserId && product?.sellerId === currentUserId);
 
   useEffect(() => {

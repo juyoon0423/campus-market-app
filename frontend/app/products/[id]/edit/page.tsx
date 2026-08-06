@@ -14,6 +14,7 @@ import type {
   ProductUpdateRequest,
 } from "@/src/types/product";
 import { AxiosError } from "axios";
+import { decodeUserIdFromToken } from "@/src/hooks/useCurrentUserId";
 import KakaoMapPicker, { TradeLocation } from "@/src/components/KakaoMapPicker";
 import SiteHeader from "@/src/components/SiteHeader";
 import FormSection from "@/src/components/ui/FormSection";
@@ -90,18 +91,11 @@ export default function ProductEditPage() {
 
         // 판매자 권한 확인
         const token = localStorage.getItem("accessToken");
-        if (token) {
-          const payload = token.split(".")[1];
-          if (payload) {
-            const decoded = JSON.parse(atob(payload));
-            const currentUserId = Number(decoded.userId || decoded.sub || null); // ⚠️ 숫자로 변환
-
-            if (currentUserId !== response.sellerId) {
-              setErrorMessage("상품을 수정할 권한이 없습니다.");
-              setIsLoading(false);
-              return;
-            }
-          }
+        const currentUserId = decodeUserIdFromToken(token);
+        if (currentUserId !== null && currentUserId !== response.sellerId) {
+          setErrorMessage("상품을 수정할 권한이 없습니다.");
+          setIsLoading(false);
+          return;
         }
 
         setProduct(response);
