@@ -244,12 +244,61 @@ N+1 방지가 없는 `getAllProducts()`(`GET /api/products`)를 호출하고 있
 - 백엔드 전체 테스트(10개 클래스, 27건) 통과 확인. 프론트 `tsc --noEmit`, `eslint`(터치한
   파일에서 새 경고/에러 없음 확인 — 기존 6개는 이번 변경과 무관), `npm run build` 통과 확인.
 
+### 13) 코드베이스 전수 재점검 Medium·Low 마무리
+"12)"에서 찾은 8건(Medium 6, Low 2) 중 Critical·High는 이미 끝냈고, 이번에 Medium 6건 전부와
+Low 4건(EmailService 삭제, aria-label, edit 페이지 죽은 state, next/image)까지 마무리함.
+남은 Low 3건(테스트 커버리지 공백, application.yml 환경 분리, STOMP setTimeout 정리)은 선택
+사항이거나 위험도가 있어 `docs/REFACTOR_TODO_2.md`에 남겨둠.
+
+1. **[Medium] `GET /api/users/{userId}` 학번 노출 차단** — `UserPublicProfileResponse`(학번
+   제외) 신설, 본인 조회(`/api/users/me`)만 기존 전체 응답 유지. 프론트의 죽은
+   `getUserProfile(userId)` 함수(SellerProfile.tsx 삭제 이후 아무도 안 씀)도 같이 제거.
+2. **[Medium] 이메일 인증코드 TTL(5분) 추가** — `EmailService`의 `verificationCodes`를
+   `Map<String, String>` → `Map<String, VerificationEntry(code, expiresAt)>`로 변경. 만료 시
+   검증 실패 처리 + 정리. `EmailServiceTest` 신규 작성(정상/오답/만료 케이스).
+3. **[Medium] `Product`에 `(status, created_at)` / `category` 인덱스 추가** — 목록/검색 핫패스인데
+   PK/FK 인덱스뿐이었음. `ddl-auto=update`로 로컬 DB에 실제 반영되는 것까지 `SHOW INDEX`로 확인.
+4. **[Medium] 리뷰 신뢰점수 재계산을 `SELECT AVG(rating)` 쿼리로 교체** — 기존엔 `findByTarget`로
+   판매자의 전체 리뷰를 로드해 Java에서 평균 계산. `ReviewRepository.findAverageRatingByTarget`
+   추가. `ReviewServiceTest`에 리뷰 2건 평균이 정확한지 검증하는 케이스 추가.
+5. **[Medium] 프론트 에러 처리(찜하기/채팅방 생성) `alert()` → 인라인 배너로 통일** —
+   `products/[id]/page.tsx`의 `handleInitiateChat`/`handleToggleLike`, `me/page.tsx`의
+   `handleToggleLike`가 `alert()`를 쓰던 걸 기존 `statusError`/`deleteError`와 같은 인라인
+   배너 패턴으로 교체. 겸사겸사 `handleToggleLike`의 "자신의 상품" 에러 분기가
+   `error.message`(AxiosError 기본 메시지)를 검사해서 실제로는 절대 안 걸리던 죽은 코드였던
+   것도 발견해서 `error.response.data.message`를 읽도록 수정. 브라우저로 로그아웃 상태에서
+   찜하기 클릭 시 alert 없이 배너가 뜨는 것 확인.
+6. **[Medium] 프론트 Vitest 테스트 셋업 도입** — 테스트 프레임워크가 전무했음. `vitest.config.mts`
+   (jsdom + `@vitejs/plugin-react`), `package.json`에 `test` 스크립트 추가.
+   `useCurrentUserId.test.ts`(JWT 디코딩), `productApi.test.ts`(axios 클라이언트 호출 검증,
+   최근 고친 "하드코딩 fetch" 버그류의 회귀 방지) 작성. STOMP는 컴포넌트 내장이라 이번 범위
+   밖(추출 선행 필요).
+7. **[Low] `infra/email/EmailService.java` 삭제** — `docs/SECURITY_REFACTOR_TODO.md` 🟢 5번,
+   여전히 빈 죽은 클래스로 남아있던 것 확인 후 삭제.
+8. **[Low] 아이콘 전용 버튼에 `aria-label` 추가** — 상품 상세의 ⋮ 관리 메뉴, 이미지 갤러리
+   썸네일, 채팅 모바일 뒤로가기 버튼.
+9. **[Low] 상품 수정 페이지 죽은 `formData` 필드 제거** — `tradeLocationName`/`tradeLatitude`/
+   `tradeLongitude`/`remainingImageUrls`가 `formData`에 채워지기만 하고 실제 제출 시엔 별도
+   state(`tradeLocation`, `remainingImageUrls`)에서 읽혀서 죽어있던 것 정리. 런타임 동작
+   변경 없음(제출 로직은 원래도 별도 state를 썼음). 브라우저로 수정 페이지 진입/제출 확인.
+10. **[Low] 백엔드가 서빙하는 상품 이미지를 next/image로 교체** — `ProductCard`, 상품 상세
+    (메인+갤러리), 수정 페이지(기존 이미지)를 `fill`+`sizes`로 전환. 로컬 File 미리보기(blob:
+    URL)는 최적화 대상이 아니라 raw `<img>` 유지. 전환 중 **Next.js 16의 SSRF 방지(private/
+    loopback IP 업스트림 기본 차단)에 막혀 이미지가 전부 깨지는 걸 발견** —
+    `remotePatterns`가 애초에 `localhost:8080`을 가리키고 있어서 로컬 환경에서 근본적으로
+    동작 불가능한 설정이었음. 사용자 확인 후 `images.dangerouslyAllowLocalIP: true` 적용
+    (이미지 URL이 항상 서버가 내려준 값이라 SSRF 공격 표면은 제한적이라고 판단). 실제 배포
+    도메인이 생기면 `remotePatterns`를 그 도메인으로 바꾸고 이 옵션은 제거해야 함. 브라우저로
+    홈/상세/수정 페이지 이미지 렌더링 확인.
+- 매 항목마다 백엔드는 `./gradlew test`(관련 테스트 + 전체 스위트) 전부 통과 확인, 프론트는
+  `npx tsc --noEmit`/`eslint`/`npm run build`(+신규 `npm run test`) 통과 확인. UI가 바뀐 항목은
+  전부 브라우저(Chrome MCP)로 실기동 검증까지 완료.
+
 ## 진행 중 / 다음에 할 일
 
 1. **`docs/BUGFIX_TODO.md`** — 🔴 1번은 완료. 남은 건 🟡 2번(리뷰 작성 프론트엔드 UI 부재,
    버그 아닌 미구현 기능 — 구현 여부는 아직 미결정).
 2. `docs/SECURITY_REFACTOR_TODO.md` 참고. 🔴 Critical 2건, 🟡 3·4번(페이지네이션, 리뷰 중복
    작성 차단), 📎 7번(채팅방 중복 생성 레이스)까지 모두 완료. 남은 건 🟢 5·6번(선택)뿐.
-3. **`docs/REFACTOR_TODO_2.md`** — "12) 코드베이스 전수 재점검"에서 새로 찾은 이슈 중
-   Medium·Low 우선순위 항목들(학번 노출, 이메일 인증코드 TTL 부재, DB 인덱스 부재, 에러
-   처리 일관성, 테스트 커버리지 등). Critical·High는 완료.
+3. **`docs/REFACTOR_TODO_2.md`** — Medium 6건, Low 4건 완료(위 "13)" 참고). 남은 건 선택/위험도
+   있는 Low 3건(테스트 커버리지, application.yml 환경 분리, STOMP setTimeout 정리)뿐.
