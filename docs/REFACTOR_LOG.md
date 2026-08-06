@@ -214,9 +214,42 @@ N+1 방지가 없는 `getAllProducts()`(`GET /api/products`)를 호출하고 있
   추가(초기 구현에서 위 두 함정을 이 테스트가 실제로 잡아냄). 실제 서버에도 동일 상품/구매자로
   curl 10개를 동시에 쏴서 전부 같은 roomId를 받고 DB에도 행이 1개만 남는지 재현/검증 완료.
 
+### 12) 코드베이스 전수 재점검 후 Critical·High 우선순위 4건 수정
+`docs/`의 기존 TODO는 다 소화된 상태라, Explore 서브에이전트 2개(백엔드/프론트 각각)로
+새로 전수 점검해서 문서에 없던 이슈를 찾고 Critical·High만 우선 수정함(Medium·Low는
+`docs/REFACTOR_TODO_2.md`로 정리해 다음으로 미룸).
+
+1. **[Critical] 죽은 컴포넌트 `SellerProfile.tsx` 삭제** — 아무데서도 import 안 되는데
+   `localStorage` 키가 `'token'`으로 실제 쓰는 `'accessToken'`과 달라 연결돼도 항상 깨지는
+   상태였고, `fetch("http://localhost:8080/...")`도 하드코딩돼 있었음.
+2. **[Critical] 상품 상세 페이지의 하드코딩 fetch → 공용 axios 클라이언트로 교체**
+   (`app/products/[id]/page.tsx`) — `handleStatusChange`/`handleDeleteProduct`가
+   `NEXT_PUBLIC_API_URL`을 무시하고 `fetch("http://localhost:8080/...")`를 직접 호출해서
+   배포 환경에서 항상 실패하는 상태였음(로컬 개발에서만 우연히 동작). `productApi.ts`에
+   `updateProductStatus` 추가, 기존 `deleteProduct` 재사용하도록 교체 — axios 인터셉터의
+   401 자동 로그아웃도 다시 적용됨. 겸사겸사 이 파일과 `userApi.ts`에 남아있던 디버깅용
+   `console.log`(디코딩된 JWT payload 전체 출력 포함)도 정리.
+3. **[High] JWT userId 디코딩 로직 3중 구현 → `useCurrentUserId` 훅으로 통합** —
+   `chat/page.tsx`, `products/[id]/page.tsx`, `products/[id]/edit/page.tsx`가 각각 다른
+   우선순위 키(`userId||sub` vs `userId||id||user_id||memberId||sub`)로 JWT를 독립적으로
+   디코딩하고 있었음. 셋 다 UI 표시/조건부 렌더링용이라 서버 검증을 대체하는 게 아니라
+   실제 버그는 없었지만 유지보수 리스크였음. `src/hooks/useCurrentUserId.ts`로 통합.
+4. **[High] 상품 검색/목록 조회 N+1 완화** (`ProductRepositoryImpl.searchProducts`) —
+   홈 화면/검색이 실제로 쓰는 이 메서드에만 형제 메서드(`findActiveProducts`/
+   `findMyProducts`)와 달리 fetch join이 없어서 `ProductListResponse` 생성 시 `seller`
+   지연 로딩이 상품마다 발생했음. `seller`(ManyToOne)에 fetch join 추가 — `images`
+   (OneToMany)는 페이징과 함께 fetch join하면 Hibernate가 메모리에서 페이징을 적용해버리는
+   문제가 있어 건드리지 않음(`application.yml`의 `default_batch_fetch_size=100`이 이미
+   IN절로 일괄 조회해주고 있어 실질적으로는 크게 문제 없었음).
+- 백엔드 전체 테스트(10개 클래스, 27건) 통과 확인. 프론트 `tsc --noEmit`, `eslint`(터치한
+  파일에서 새 경고/에러 없음 확인 — 기존 6개는 이번 변경과 무관), `npm run build` 통과 확인.
+
 ## 진행 중 / 다음에 할 일
 
 1. **`docs/BUGFIX_TODO.md`** — 🔴 1번은 완료. 남은 건 🟡 2번(리뷰 작성 프론트엔드 UI 부재,
    버그 아닌 미구현 기능 — 구현 여부는 아직 미결정).
 2. `docs/SECURITY_REFACTOR_TODO.md` 참고. 🔴 Critical 2건, 🟡 3·4번(페이지네이션, 리뷰 중복
    작성 차단), 📎 7번(채팅방 중복 생성 레이스)까지 모두 완료. 남은 건 🟢 5·6번(선택)뿐.
+3. **`docs/REFACTOR_TODO_2.md`** — "12) 코드베이스 전수 재점검"에서 새로 찾은 이슈 중
+   Medium·Low 우선순위 항목들(학번 노출, 이메일 인증코드 TTL 부재, DB 인덱스 부재, 에러
+   처리 일관성, 테스트 커버리지 등). Critical·High는 완료.
