@@ -9,6 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(indexes = {
+        // 목록/검색이 status로 필터링하고 created_at으로 정렬하는 게 가장 빈번한 쿼리 패턴이라
+        // 두 컬럼을 묶은 복합 인덱스를 둔다(정렬까지 인덱스로 커버).
+        @Index(name = "idx_product_status_created_at", columnList = "status, created_at"),
+        @Index(name = "idx_product_category", columnList = "category")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Product extends BaseTimeEntity {
