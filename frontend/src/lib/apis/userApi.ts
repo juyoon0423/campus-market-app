@@ -23,11 +23,6 @@ export async function getMyProfile(): Promise<UserProfileResponse> {
   return response.data;
 }
 
-export async function getUserProfile(userId: number): Promise<UserProfileResponse> {
-  const response = await api.get<UserProfileResponse>(`/api/users/${userId}`);
-  return response.data;
-}
-
 export async function sendVerificationCode(email: string): Promise<void> {
   await api.post("/api/users/emails/verification-requests", null, {
     params: { email },

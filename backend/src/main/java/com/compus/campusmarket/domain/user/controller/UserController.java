@@ -52,9 +52,10 @@ public class UserController {
         return ResponseEntity.ok(profile);
     }
     @GetMapping("/{userId}")
-    public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable Long userId) {
-        // UserService에 이미 구현된 getUserProfile을 호출합니다.
-        UserProfileResponse profile = userService.getUserProfile(userId);
+    public ResponseEntity<UserPublicProfileResponse> getUserProfile(@PathVariable Long userId) {
+        // 본인이 아닌 다른 사용자(판매자 등)의 프로필이므로 studentId 같은 개인식별정보는
+        // 제외한 공개용 DTO를 반환한다.
+        UserPublicProfileResponse profile = userService.getPublicUserProfile(userId);
         return ResponseEntity.ok(profile);
     }
 
