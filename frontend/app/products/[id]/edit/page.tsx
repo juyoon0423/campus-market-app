@@ -22,6 +22,12 @@ import Button from "@/src/components/ui/Button";
 
 const FALLBACK_IMAGE_URL = "/window.svg";
 
+// 거래 희망 장소는 tradeLocation, 남길 기존 이미지는 remainingImageUrls state가 각각
+// 따로 관리하고 제출 시 그쪽 값을 쓴다 — formData에는 실제로 입력 필드가 있는
+// title/description/price/category만 둔다(예전엔 ProductUpdateRequest 전체 모양을
+// formData에도 채워뒀는데, 그 값들은 어디서도 읽히지 않는 죽은 상태였다).
+type ProductEditFormState = Pick<ProductUpdateRequest, "title" | "description" | "price" | "category">;
+
 const fieldClasses =
   "w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
 
@@ -52,15 +58,11 @@ export default function ProductEditPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
 
-  const [formData, setFormData] = useState<ProductUpdateRequest>({
+  const [formData, setFormData] = useState<ProductEditFormState>({
     title: "",
     description: "",
     price: 0,
     category: "",
-    tradeLocationName: "",
-    tradeLatitude: 0,
-    tradeLongitude: 0,
-    remainingImageUrls: [],
   });
   const [tradeLocation, setTradeLocation] = useState<TradeLocation | null>(null);
 
@@ -104,10 +106,6 @@ export default function ProductEditPage() {
           description: response.description,
           price: response.price,
           category: response.category,
-          tradeLocationName: response.tradeLocationName ?? "",
-          tradeLatitude: response.tradeLatitude ?? 0,
-          tradeLongitude: response.tradeLongitude ?? 0,
-          remainingImageUrls: response.imageUrls || [],
         });
         setRemainingImageUrls(response.imageUrls || []);
         if (response.tradeLatitude != null && response.tradeLongitude != null) {
@@ -186,7 +184,7 @@ export default function ProductEditPage() {
   };
 
   const handleInputChange = (
-    field: keyof ProductUpdateRequest,
+    field: keyof ProductEditFormState,
     value: string | number,
   ) => {
     setFormData((prev) => ({
