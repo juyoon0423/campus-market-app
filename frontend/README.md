@@ -1,5 +1,7 @@
 # 🛒 캠퍼스 마켓 (Campus Market) - Frontend
 
+> 프로젝트 전체 소개는 [루트 README](../README.md)를 참고하세요.
+
 > **대학생 중고거래 플랫폼을 위한 Next.js 기반 프론트엔드 애플리케이션**
 >
 > JWT/OAuth2 인증, 실시간 채팅(WebSocket), 상품 관리 기능을 구현하였으며,
@@ -33,7 +35,7 @@
 
 ### Frontend
 
-- **Framework:** `Next.js 14+ (App Router)`
+- **Framework:** `Next.js 16 (App Router)`
 - **Language:** `TypeScript`
 - **Styling:** `Tailwind CSS`
 - **State Management:** `React Context API`
@@ -144,6 +146,8 @@ npm install
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_WS_ENDPOINT=http://localhost:8080/ws-stomp
+NEXT_PUBLIC_KAKAO_MAP_KEY=your-kakao-javascript-key
 ```
 
 ### 3. 개발 서버 실행
@@ -156,9 +160,7 @@ npm run dev
 
 ## 🔗 Related Links
 
-| 프로젝트              | 레포지토리 링크                                     |
-| --------------------- | --------------------------------------------------- |
-| Campus Market Backend | https://github.com/juyoon0423/campus-market-backend |
+백엔드는 별도 저장소가 아닌 같은 모노레포의 `backend/` 디렉터리입니다. 전체 구조와 실행 방법은 [루트 README](../README.md)를 참고하세요.
 
 ---
 

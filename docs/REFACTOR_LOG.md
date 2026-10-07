@@ -7,9 +7,9 @@
 
 - 저장소: `https://github.com/juyoon0423/campus-market-app` (기존 backend/frontend 두 저장소를
   히스토리 보존한 채 하나로 병합함. 기존 두 저장소는 삭제됨)
-- 로컬 경로: `/Users/bagjuyun/Desktop/STUDY/프로젝트/Campus Market` (이 폴더 자체가 모노레포
+- 로컬 경로: 개발자 PC의 로컬 작업 폴더 (이 폴더 자체가 모노레포
   루트, `backend/`와 `frontend/` 서브디렉토리 포함)
-- 로컬 MySQL(`campus_market`, campus_user/1234), Redis가 떠 있어야 백엔드 테스트가 돌아감
+- 로컬 MySQL(`campus_market`, 로컬 DB 계정 — 평문 비밀번호 사용, 실제 배포 전 교체 필요), Redis가 떠 있어야 백엔드 테스트가 돌아감
   (`@SpringBootTest` 기반, Testcontainers 없음 — 프로젝트 기존 관례)
 
 ## 완료된 작업

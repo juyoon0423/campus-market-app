@@ -15,7 +15,7 @@ Medium 6건, Low 4건은 완료. 아래 3건만 남음 — 전부 "선택"이거
   먼저 훅으로 추출하는 선행 작업이 필요함.
 
 ### 2. `application.yml` 환경 분리 검토 — 위험도 높음
-- 개발자 로컬 절대경로(`file.upload-dir: /Users/bagjuyun/campus_market_uploads/`)가 하드코딩돼
+- 개발자 PC 로컬 업로드 경로(`file.upload-dir`)가 하드코딩돼
   있고 `ddl-auto: update`가 무조건 적용됨. 다른 환경에 배포하면 조용히 깨짐.
 - 이전 세션(`docs/REFACTOR_LOG.md` "5)")에서 `/api/dummy/**` 인증 문제를 다룰 때, 프로필 분리
   (`@Profile("local")` 등)를 적용하려다 "이 프로젝트엔 프로필 분리 인프라가 전혀 없어서

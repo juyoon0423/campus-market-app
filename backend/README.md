@@ -1,16 +1,14 @@
 # 🚀 캠퍼스 마켓 (Campus Market) - Backend
 
+> 프로젝트 전체 소개는 [루트 README](../README.md)를 참고하세요.
 
 
-> **대학생 중고거래 플랫폼을 위한 고성능 · 보안 중심 REST API 서버**
+
+> **대학생 중고거래 플랫폼을 위한 REST API 서버**
 
 
 
 > Spring Boot, Spring Security, JWT, OAuth2를 기반으로 안정적이고 확장 가능한 백엔드 시스템을 구축하였습니다.
-
-
-
-> **또한 100만 건 규모 데이터 환경에서 Redis 캐싱 및 DB 튜닝을 통해 조회 성능을 개선한 경험을 담고 있습니다.**
 
 
 
@@ -62,9 +60,9 @@
 
 
 
-* **Language:** `Java 17`
+* **Language:** `Java 21`
 
-* **Framework:** `Spring Boot 3.x`
+* **Framework:** `Spring Boot 4`
 
 * **Build Tool:** `Gradle`
 
@@ -73,8 +71,6 @@
 * **Cache:** `Redis`
 
 * **Security:** `Spring Security`, `OAuth2 Client`, `JWT (jjwt 0.12.3)`
-
-* **Infra & DevOps:** `Docker`, `GitHub Actions`
 
 * **Performance Testing:** `k6`
 
@@ -107,7 +103,6 @@
 ### ❤️ 찜하기 & 조회수
 - DTO 기반 응답 설계
 - 사용자별 isLiked 상태 관리
-- 조회 성능 최적화
 
 ### 💬 Real-time Chat
 - Spring WebSocket & STOMP 기반 실시간 채팅
@@ -194,46 +189,6 @@
 
 
 
-### 8️⃣ 100만 건 데이터 환경에서 조회 성능 최적화
-
-
-
-* **문제:** 100만 건의 더미 데이터를 적재한 후 k6 기반 부하 테스트를 수행한 결과 메인 페이지 조회 API에서 9초 이상의 응답 지연과 OOM 현상이 발생.
-
-* **해결:**
-
-
-
-* EXPLAIN 분석을 통해 Full Scan 발생 확인
-
-* `Category`, `Status`, `CreatedAt` 기준 복합 인덱스 설계
-
-* Fetch Join 제거 및 `default_batch_fetch_size=100` 적용
-
-* Redis Look-Aside 패턴 기반 캐싱 도입
-
-* 사용자별 `isLiked` 상태를 JWT 기반 동적 조회로 분리
-
-* Self Invocation 문제 해결을 위한 캐시 전용 서비스 계층 분리
-
-* **결과:**
-
-
-
-* 평균 응답 시간 약 9,000ms → 7ms (Redis Cache Hit 기준)
-
-* Timeout 제거
-
-* OOM 해결
-
-* 에러율 0% 달성
-
-
-
----
-
-
-
 ## ⚙️ Configuration & Installation
 
 
@@ -304,15 +259,8 @@ gemini:
 
 ## 🔗 Related Links
 
-### Frontend Repository
+프론트엔드는 별도 저장소가 아닌 같은 모노레포의 `frontend/` 디렉터리입니다. 전체 구조와 실행 방법은 [루트 README](../README.md)를 참고하세요.
 
-- GitHub
-  - https://github.com/juyoon0423/campus-market-frontend
-
-- Tech Stack
-  - Next.js
-  - Tailwind CSS
-  - Axios
 ---
 
 

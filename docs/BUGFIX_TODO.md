@@ -29,6 +29,5 @@
 4. 이 파일의 🟡 2번(리뷰 작성 UI) 구현 여부부터 결정하고 진행
 5. 완료 후 `docs/REFACTOR_LOG.md`에 완료 기록 추가하고 이 파일에서 항목 제거(비면 파일 삭제), 커밋
 
-## 참고 — 이번 세션에서 만든 테스트 계정 (DB에 남아있음, 필요 없으면 정리)
-- `maptest-seller1@sj.sangji.ac.kr` / `testpass1234`
-- `maptest-buyer1@sj.sangji.ac.kr` / `testpass1234`
+## 참고 — 이번 세션에서 만든 로컬 테스트 계정 (DB에 남아있음, 필요 없으면 정리)
+- 판매자/구매자용 로컬 테스트 계정 2개
