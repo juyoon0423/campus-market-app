@@ -190,7 +190,7 @@ flowchart LR
 | 보안 | `StompAuthChannelInterceptorTest` — 정상·누락·위조 토큰, 인증 결과의 세션 등록 여부 / `FileUploadUtilTest` — 확장자 화이트리스트, 경로 조작 방지 |
 | 인증·회원 | `UserServiceTest`(비밀번호 해시), `EmailServiceTest`(인증 코드 만료) |
 | 입력 검증 | `UserControllerValidationTest`, `ProductControllerValidationTest`(멀티파트 요청 포함) |
-| 상품·리뷰 | `ProductServiceTest`(연관 데이터 정리 후 삭제, 거래 희망 장소 저장·수정, 상태 필터), `ReviewServiceTest`(중복 작성 방지, 신뢰 지수 평균 갱신) |
+| 상품·리뷰 | `ProductServiceTest`(연관 데이터 정리 후 삭제, 거래 희망 장소 저장·수정, 상태 필터), `ReviewServiceTest`(중복 작성 방지, 신뢰 점수 평균 갱신) |
 | 프론트엔드 | Vitest — `useCurrentUserId`(JWT 해석), `productApi`(API 클라이언트 호출) |
 
 ```bash
@@ -234,6 +234,26 @@ spring:
     redis:
       host: localhost
       port: 6379
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: YOUR_KAKAO_CLIENT_ID
+            client-secret: YOUR_KAKAO_CLIENT_SECRET
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            scope:
+              - profile_nickname
+              - account_email
+            client-name: Kakao
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
   mail:
     host: smtp.gmail.com
     port: 587
