@@ -22,7 +22,7 @@
 | 백엔드 | Java 21, Spring Boot 4, Spring Data JPA, QueryDSL, Spring Security, JWT, OAuth2(카카오), WebSocket(STOMP), Redis, MySQL |
 | 프론트엔드 | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Axios, STOMP.js |
 | 외부 연동 | 카카오 로그인·카카오맵, Google Gemini API, Gmail SMTP |
-| 테스트 | JUnit 5 (10개 클래스 · 30개 케이스), Vitest, k6 |
+| 테스트 | JUnit 5 (12개 클래스 · 38개 케이스), Vitest, k6 |
 
 <br>
 

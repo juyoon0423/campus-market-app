@@ -39,7 +39,6 @@
 - 빈 클래스였던 `GlobalExceptionHandler`를 `@RestControllerAdvice`로 구현(락 충돌 → 409)
 - `ProductConcurrencyTest` 신규 작성(재현 + 검증 + 낙관적/비관적 벤치마크)
 - 재현 수치 재검증과 한계(좋아요 데드락 재시도 소진, 벤치마크는 단일 실행)는 아래 "14)" 참고
-- 포트폴리오 5번 문구 초안: `docs/portfolio_item5_draft.md` 참고 (스크래치패드에서 옮겨옴)
 
 ### 3) 포트폴리오 1번 항목("조회 성능 최적화") — 삭제 결정
 - 재검증 결과 문제가 알려진 것(캐시 무효화 부재)보다 심각했음:
