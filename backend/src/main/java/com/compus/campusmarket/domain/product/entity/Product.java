@@ -54,7 +54,9 @@ public class Product extends BaseTimeEntity {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images = new ArrayList<>();
 
-    @Column(nullable = false)
+    // 조회수는 ProductRepository.increaseViewCount(벌크 UPDATE)로만 올린다. 엔티티 UPDATE는 전 컬럼을 쓰기 때문에
+    // updatable = false로 빼두지 않으면 좋아요·수정 등 다른 트랜잭션이 읽어둔 옛 조회수로 덮어써 조회수가 유실된다.
+    @Column(nullable = false, updatable = false)
     private int viewCount = 0;
 
     @Column(nullable = false)
@@ -112,10 +114,6 @@ public class Product extends BaseTimeEntity {
     }
 
     // --- 비즈니스 로직 추가 ---
-    public void increaseViewCount() {
-        this.viewCount++;
-    }
-
     public void increaseLikeCount() {
         this.likeCount++;
     }

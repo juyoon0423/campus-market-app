@@ -97,13 +97,12 @@ public class ProductService {
 
     @Transactional // 조회수가 '업데이트' 되어야 하므로 readOnly=true를 덮어씁니다.
     public ProductDetailResponse getProductDetail(Long productId, Long viewerId) {
+        // 조회수 증가 로직 (비로그인 사용자거나, 본인이 아닐 때만 증가)
+        // version을 올리지 않는 벌크 쿼리로 먼저 증가시킨 뒤, 증가된 값이 반영된 엔티티를 응답용으로 조회한다.
+        productRepository.increaseViewCount(productId, viewerId);
+
         Product product = productRepository.findByIdWithSeller(productId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
-
-        // 조회수 증가 로직 (비로그인 사용자거나, 본인이 아닐 때만 증가)
-        if (viewerId == null || !product.getSeller().getId().equals(viewerId)) {
-            product.increaseViewCount();
-        }
 
         // 현재 사용자의 좋아요 여부 확인
         boolean isLiked = false;

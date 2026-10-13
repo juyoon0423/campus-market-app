@@ -4,6 +4,7 @@ import com.compus.campusmarket.domain.product.entity.Product;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -26,4 +27,12 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Product p where p.id = :id")
     Optional<Product> findByIdForUpdate(@Param("id") Long id);
+
+    // 조회수는 엔티티 수정(dirty checking)이 아니라 벌크 UPDATE로 올린다. 엔티티로 수정하면 Product.version이
+    // 같이 올라가 동시 조회끼리, 또 좋아요(@Version 낙관적 락)와 충돌한다. "update versioned"를 쓰지 않으므로
+    // version은 건드리지 않는다. 판매자 본인의 조회(viewerId = seller)는 세지 않는다.
+    @Modifying
+    @Query("update Product p set p.viewCount = p.viewCount + 1 " +
+            "where p.id = :id and (:viewerId is null or p.seller.id <> :viewerId)")
+    int increaseViewCount(@Param("id") Long id, @Param("viewerId") Long viewerId);
 }
