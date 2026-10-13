@@ -38,6 +38,7 @@
   데드락이 먼저 터지는 걸 실측으로 발견해 `ConcurrencyFailureException`으로 재시도 범위를 넓힘
 - 빈 클래스였던 `GlobalExceptionHandler`를 `@RestControllerAdvice`로 구현(락 충돌 → 409)
 - `ProductConcurrencyTest` 신규 작성(재현 + 검증 + 낙관적/비관적 벤치마크)
+- 재현 수치 재검증과 한계(좋아요 데드락 재시도 소진, 벤치마크는 단일 실행)는 아래 "14)" 참고
 - 포트폴리오 5번 문구 초안: `docs/portfolio_item5_draft.md` 참고 (스크래치패드에서 옮겨옴)
 
 ### 3) 포트폴리오 1번 항목("조회 성능 최적화") — 삭제 결정
@@ -293,6 +294,24 @@ Low 4건(EmailService 삭제, aria-label, edit 페이지 죽은 state, next/imag
 - 매 항목마다 백엔드는 `./gradlew test`(관련 테스트 + 전체 스위트) 전부 통과 확인, 프론트는
   `npx tsc --noEmit`/`eslint`/`npm run build`(+신규 `npm run test`) 통과 확인. UI가 바뀐 항목은
   전부 브라우저(Chrome MCP)로 실기동 검증까지 완료.
+
+### 14) 상세 조회수 증가의 낙관적 락 충돌 수정 + 동시성 수치 재검증 (commit `da87a0a`, `bf15fdb`)
+- **수정 전(`7fa0216^`) 재현 재검증** — 3회 반복 실행. 좋아요 20건 동시 요청 시 `likeCount` 1,
+  실제 `product_like` row 2~3건, 데드락 실패 17~18건. 거래완료 동시 2건은 둘 다 성공해 buyer가
+  나중 요청으로 덮어써짐. (기존 문서의 "20건 중 1건만 반영"은 `likeCount` 기준 수치였음)
+- **문제** — `getProductDetail`이 엔티티의 `viewCount`를 수정(dirty checking)해 UPDATE하면서
+  `Product.version`까지 올리고 있었음. 상세 조회 동시 호출(서비스 계층) 시 조회 20건 중 19건,
+  100건 중 93~94건이 낙관적 락 충돌로 실패. 좋아요 20+조회 100 혼합에서는 조회 75~88건 실패.
+- **수정** — 조회수 증가를 `version`을 올리지 않는 벌크 쿼리(`ProductRepository.increaseViewCount`)로
+  분리. 수정 후 조회 단독은 실패 0건, 좋아요 20+조회 100 혼합은 조회 실패 0~1건.
+- **벌크 쿼리만으로는 조회수 유실** — 좋아요의 엔티티 UPDATE가 전 컬럼을 쓰면서 `view_count`를
+  옛 값으로 덮어써, 조회 100건 성공 중 `viewCount`가 44~56으로 남음. `Product.viewCount`에
+  `updatable = false`를 적용해 해결.
+- **한계** — 좋아요 경로의 데드락 재시도는 줄지 않았음. 반복 실행에서 간헐적으로(측정 방식에
+  따라 5~20%) 6회 재시도를 소진해 1~2건 실패. 낙관적/비관적 비교에서는 비관적 락이 약 4~5배
+  빨랐음(301ms vs 60ms). 이 벤치마크 수치는 단일 실행이며 반복 측정이 아님.
+- `ProductViewLikeConcurrencyTest` 신규 작성(조회 시 version 불변 회귀 테스트 + 조회·좋아요
+  혼합 측정 시나리오).
 
 ## 진행 중 / 다음에 할 일
 
