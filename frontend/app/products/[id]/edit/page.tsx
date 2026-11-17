@@ -30,7 +30,7 @@ const FALLBACK_IMAGE_URL = "/window.svg";
 type ProductEditFormState = Pick<ProductUpdateRequest, "title" | "description" | "price" | "category">;
 
 const fieldClasses =
-  "w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
+  "w-full rounded-field border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
 
 function getImageUrl(imageUrl?: string) {
   if (!imageUrl) {
@@ -241,7 +241,7 @@ export default function ProductEditPage() {
       <div className="min-h-screen">
         <SiteHeader />
         <main className="mx-auto w-full max-w-3xl px-4 py-10">
-          <div className="rounded-card border border-border bg-surface p-8 shadow-soft">
+          <div className="py-6">
             <p className="text-sm text-text-muted">상품 정보를 불러오는 중...</p>
           </div>
         </main>
@@ -254,7 +254,7 @@ export default function ProductEditPage() {
       <div className="min-h-screen">
         <SiteHeader />
         <main className="mx-auto w-full max-w-3xl px-4 py-10">
-          <div className="rounded-card border border-border bg-surface p-8 shadow-soft">
+          <div className="py-6">
             <p className="rounded-field bg-red-soft px-4 py-3 text-sm text-red-ink">
               {errorMessage || "상품 정보가 없습니다."}
             </p>
@@ -280,10 +280,10 @@ export default function ProductEditPage() {
             <ChevronLeft className="h-4 w-4" />
             뒤로
           </button>
-          <h1 className="mt-3 text-2xl font-extrabold text-text sm:text-[1.75rem]">상품 수정</h1>
+          <h1 className="mt-3 text-2xl font-bold text-text">상품 수정</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-card border border-border bg-surface p-6 shadow-soft md:p-8">
+        <form onSubmit={handleSubmit} className="space-y-0">
           <div className="space-y-8">
             {errorMessage && (
               <div className="rounded-field bg-red-soft px-4 py-3 text-sm text-red-ink">
@@ -357,7 +357,7 @@ export default function ProductEditPage() {
                   type="button"
                   onClick={handleGenerateDescription}
                   disabled={isGeneratingDescription || isSubmitting}
-                  className="flex items-center gap-1.5 rounded-button bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-button border border-border-strong bg-surface px-3 py-1.5 text-[13px] font-semibold text-text transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:text-text-faint"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   {isGeneratingDescription ? "AI가 작성 중..." : "AI로 설명 쓰기"}
@@ -420,7 +420,7 @@ export default function ProductEditPage() {
                   accept="image/*"
                   multiple
                   onChange={handleAddNewImages}
-                  className="block w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text-muted file:mr-3 file:rounded-field file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-accent-strong"
+                  className="block w-full rounded-field border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text-muted file:mr-3 file:rounded-field file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-accent-strong"
                 />
                 {newImages.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-3">

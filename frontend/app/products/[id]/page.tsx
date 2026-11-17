@@ -227,7 +227,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen">
         <SiteHeader />
         <main className="mx-auto w-full max-w-4xl px-4 py-10">
-          <div className="rounded-card border border-border bg-surface p-8 shadow-soft">
+          <div className="py-6">
             <p className="rounded-field bg-red-soft px-4 py-3 text-sm text-red-ink">
               잘못된 상품 경로입니다.
             </p>
@@ -245,7 +245,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen">
         <SiteHeader />
         <main className="mx-auto w-full max-w-4xl px-4 py-10">
-          <div className="rounded-card border border-border bg-surface p-8 shadow-soft">
+          <div className="py-6">
             <p className="text-sm text-text-muted">상품 정보를 불러오는 중...</p>
           </div>
         </main>
@@ -258,7 +258,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen">
         <SiteHeader />
         <main className="mx-auto w-full max-w-4xl px-4 py-10">
-          <div className="rounded-card border border-border bg-surface p-8 shadow-soft">
+          <div className="py-6">
             <p className="rounded-field bg-red-soft px-4 py-3 text-sm text-red-ink">
               {errorMessage || "상품 정보가 없습니다."}
             </p>
@@ -331,7 +331,7 @@ export default function ProductDetailPage() {
                               disabled={isStatusUpdating || product?.status === "SELLING"}
                               className={`w-full px-4 py-2 text-left text-sm transition-colors ${
                                 product?.status === "SELLING"
-                                  ? "cursor-not-allowed bg-surface-alt text-text-faint"
+                                  ? "cursor-not-allowed bg-surface-alt text-text-muted"
                                   : "text-text hover:bg-surface-alt"
                               }`}
                             >
@@ -345,7 +345,7 @@ export default function ProductDetailPage() {
                               disabled={isStatusUpdating || product?.status === "RESERVED"}
                               className={`w-full px-4 py-2 text-left text-sm transition-colors ${
                                 product?.status === "RESERVED"
-                                  ? "cursor-not-allowed bg-surface-alt text-text-faint"
+                                  ? "cursor-not-allowed bg-surface-alt text-text-muted"
                                   : "text-text hover:bg-surface-alt"
                               }`}
                             >
@@ -386,19 +386,19 @@ export default function ProductDetailPage() {
         <div className="grid gap-8 md:grid-cols-2 md:gap-10">
           {/* Left column: Image gallery */}
           <div className="space-y-3">
-            <div className="relative aspect-square w-full overflow-hidden rounded-card bg-surface-alt">
+            <div className="relative aspect-square w-full overflow-hidden rounded-field bg-surface-alt">
               {resolvedImageUrls.length > 0 ? (
                 <Image
                   src={resolvedImageUrls[activeImageIndex]}
                   alt={product.title}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
+                  preload
                   className="object-contain"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-text-faint">
-                  <span className="text-sm">이미지 없음</span>
+                <div className="flex h-full w-full items-center justify-center text-text-muted">
+                  <span className="text-sm">사진 없음</span>
                 </div>
               )}
             </div>
@@ -425,7 +425,7 @@ export default function ProductDetailPage() {
           {/* Right column: Product info */}
           <div className="space-y-7">
             <div>
-              <h1 className="text-2xl font-extrabold leading-snug text-text">{product.title}</h1>
+              <h1 className="text-xl font-bold leading-snug text-text md:text-2xl">{product.title}</h1>
 
               {/* 상태 변경/삭제/채팅/찜 에러 메시지 */}
               {(statusError || deleteError || actionError) && (
@@ -438,7 +438,7 @@ export default function ProductDetailPage() {
             <div className="border-b border-border pb-7">
               {/* 가격과 상태 표시 */}
               <div className="flex items-center justify-between">
-                <p className="text-3xl font-extrabold tabular-nums text-text">
+                <p className="text-2xl font-bold tabular-nums text-text">
                   {product.price.toLocaleString()}원
                 </p>
                 <div className="flex items-center gap-3">
@@ -447,11 +447,13 @@ export default function ProductDetailPage() {
                     type="button"
                     onClick={handleToggleLike}
                     disabled={isLiking || isSeller}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-50"
-                    title={product.isLiked ? "찜 취소" : "찜하기"}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-surface transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={product.isLiked ? "찜 취소" : "찜하기"}
+                    aria-pressed={product.isLiked}
                   >
                     <Heart
-                      className={`h-5 w-5 ${product.isLiked ? "fill-red text-red" : "text-text-faint"}`}
+                      aria-hidden
+                      className={`h-5 w-5 ${product.isLiked ? "fill-red text-red" : "text-text-muted"}`}
                     />
                   </button>
                 </div>
@@ -472,25 +474,25 @@ export default function ProductDetailPage() {
 
             {/* 판매자 정보 */}
             <div className="flex items-center gap-3 border-b border-border pb-7">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-strong text-base font-bold text-white">
+              <div aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-alt text-base font-bold text-text-muted">
                 {product.sellerName.charAt(0)}
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-text">{product.sellerName}</p>
-                <p className="text-xs text-text-faint">신뢰도 {product.sellerTrustScore.toFixed(1)}</p>
+                <p className="truncate text-base font-semibold text-text">{product.sellerName}</p>
+                <p className="text-[13px] text-text-faint">신뢰도 {product.sellerTrustScore.toFixed(1)}</p>
               </div>
             </div>
 
             <div className="border-b border-border pb-7">
-              <h2 className="mb-3 text-lg font-bold text-text">상품 설명</h2>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-muted">
+              <h2 className="mb-3 text-base font-bold text-text">상품 설명</h2>
+              <p className="whitespace-pre-wrap text-base leading-relaxed text-text">
                 {product.description}
               </p>
             </div>
 
             {product.tradeLatitude != null && product.tradeLongitude != null ? (
               <div className="border-b border-border pb-7 md:border-b-0 md:pb-0">
-                <h2 className="mb-3 text-lg font-bold text-text">거래 희망 장소</h2>
+                <h2 className="mb-3 text-base font-bold text-text">거래 희망 장소</h2>
                 <KakaoMapView
                   latitude={product.tradeLatitude}
                   longitude={product.tradeLongitude}
@@ -503,7 +505,7 @@ export default function ProductDetailPage() {
             {isHydrated && (
               isLoggedIn ? (
                 !isSeller && (
-                  <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 p-4 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
+                  <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
                     <Button
                       variant="primary"
                       size="lg"
@@ -516,7 +518,7 @@ export default function ProductDetailPage() {
                   </div>
                 )
               ) : (
-                <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 p-4 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
+                <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
                   <Link
                     href="/login"
                     className={`mx-auto block max-w-5xl text-center md:mx-0 ${buttonClasses("primary", "lg")}`}
@@ -531,9 +533,14 @@ export default function ProductDetailPage() {
       </main>
       {/* SOLD_OUT 모달 */}
       {isSoldOutModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-md rounded-card bg-surface p-6 shadow-floating">
-            <h3 className="mb-4 text-lg font-bold text-text">판매완료 처리</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/50 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sold-out-title"
+            className="w-full max-w-md rounded-card bg-surface p-6 shadow-floating"
+          >
+            <h3 id="sold-out-title" className="mb-4 text-xl font-bold text-text">판매완료 처리</h3>
             <p className="mb-4 text-sm text-text-muted">채팅을 나눈 구매자를 선택해주세요.</p>
 
             {isLoadingChatRooms ? (
@@ -556,8 +563,8 @@ export default function ProductDetailPage() {
                     disabled={isStatusUpdating}
                     className="w-full rounded-field border border-border px-3 py-2 text-left transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <div className="font-medium text-text">{room.opponentName}</div>
-                    <div className="text-xs text-text-faint">{room.lastMessage || "메시지 없음"}</div>
+                    <div className="font-semibold text-text">{room.opponentName}</div>
+                    <div className="text-[13px] text-text-faint">{room.lastMessage || "메시지 없음"}</div>
                   </button>
                 ))}
               </div>

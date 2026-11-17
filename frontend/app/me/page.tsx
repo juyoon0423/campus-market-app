@@ -95,7 +95,7 @@ export default function MyPage() {
     <div className="min-h-screen">
       <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 md:py-12">
-        <h1 className="mb-8 text-2xl font-extrabold text-text sm:text-[1.75rem]">마이페이지</h1>
+        <h1 className="mb-8 text-2xl font-bold text-text">마이페이지</h1>
 
         {isLoading ? (
           <p className="text-sm text-text-muted">정보를 불러오는 중...</p>
@@ -109,18 +109,18 @@ export default function MyPage() {
 
         {!isLoading && !errorMessage && user ? (
           <div className="space-y-8">
-            <section className="flex flex-col gap-4 rounded-card border border-border bg-surface p-6 shadow-soft sm:flex-row sm:items-center">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-strong text-2xl font-bold text-white">
+            <section className="flex flex-col gap-4 border-b border-border pb-8 sm:flex-row sm:items-center">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-surface-alt text-2xl font-bold text-text-muted" aria-hidden>
                 {user.name.charAt(0)}
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-extrabold text-text">{user.name}</h2>
-                <p className="text-sm text-text-faint">{user.department} · {user.studentId}</p>
-                <p className="mt-1 text-xs text-text-faint">가입일 {formatDate(user.createdAt)}</p>
+                <h2 className="text-xl font-bold text-text">{user.name}</h2>
+                <p className="text-sm text-text-muted">{user.department} · {user.studentId}</p>
+                <p className="mt-1 text-[13px] text-text-faint">가입일 {formatDate(user.createdAt)}</p>
               </div>
-              <div className="rounded-field bg-surface-alt px-4 py-3 text-center sm:text-right">
-                <p className="text-xs font-semibold text-text-muted">신뢰도</p>
-                <p className="text-lg font-extrabold tabular-nums text-text">{user.trustScore}</p>
+              <div className="sm:text-right">
+                <p className="text-[13px] font-semibold text-text-muted">신뢰도</p>
+                <p className="text-xl font-bold tabular-nums text-text">{user.trustScore}</p>
               </div>
             </section>
 
@@ -167,8 +167,8 @@ export default function MyPage() {
                   {productsError}
                 </p>
               ) : products.length === 0 ? (
-                <div className="mt-6 flex flex-col items-center justify-center rounded-card border border-dashed border-border-strong py-20 text-center">
-                  <Heart className="mb-3 h-10 w-10 text-text-faint" />
+                <div className="mt-6 flex flex-col items-center justify-center py-20 text-center">
+                  <Heart aria-hidden className="mb-3 h-8 w-8 text-text-faint" />
                   <p className="text-sm text-text-muted">
                     {activeTab === "sales"
                       ? "등록한 상품이 없어요."
@@ -176,7 +176,7 @@ export default function MyPage() {
                   </p>
                 </div>
               ) : (
-                <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6">
+                <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-10 lg:grid-cols-4">
                   {products.map((product) => (
                     <ProductCard
                       key={product.id}

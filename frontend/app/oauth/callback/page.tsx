@@ -69,12 +69,12 @@ function OAuthCallbackContent() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <main className="w-full max-w-sm rounded-card border border-border bg-surface p-8 text-center shadow-soft">
+      <main className="w-full max-w-sm p-8 text-center">
         {status === "loading" && (
           <div className="flex flex-col items-center gap-4">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-surface-alt border-t-accent" />
             <div>
-              <h1 className="text-lg font-bold text-text">카카오 로그인 처리 중</h1>
+              <h1 className="text-xl font-bold text-text">카카오 로그인 처리 중</h1>
               <p className="mt-2 text-sm text-text-muted">잠시만 기다려주세요...</p>
             </div>
           </div>
@@ -86,7 +86,7 @@ function OAuthCallbackContent() {
               <CheckCircle2 className="h-6 w-6 text-green-ink" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-text">로그인 성공!</h1>
+              <h1 className="text-xl font-bold text-text">로그인 성공!</h1>
               <p className="mt-2 text-sm text-text-muted">{message}</p>
             </div>
           </div>
@@ -98,7 +98,7 @@ function OAuthCallbackContent() {
               <XCircle className="h-6 w-6 text-red-ink" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-text">로그인 실패</h1>
+              <h1 className="text-xl font-bold text-text">로그인 실패</h1>
               <p className="mt-2 text-sm text-text-muted">{message}</p>
             </div>
             <Button variant="primary" size="md" onClick={() => router.replace("/login")} className="mt-2">

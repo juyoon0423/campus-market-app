@@ -414,14 +414,14 @@ function ChatPageContent() {
                         onClick={() => setSelectedRoomId(room.id)}
                         className={`w-full rounded-field px-3 py-2.5 text-left transition-colors ${
                           room.id === selectedRoomId
-                            ? "bg-accent text-white"
+                            ? "bg-surface-alt text-text"
                             : "text-text hover:bg-surface-alt"
                         }`}
                       >
-                        <p className="truncate text-sm font-bold">{room.productName}</p>
+                        <p className="truncate text-sm font-semibold">{room.productName}</p>
                         <p
-                          className={`truncate text-xs ${
-                            room.id === selectedRoomId ? "text-white/80" : "text-text-faint"
+                          className={`truncate text-[13px] ${
+                            room.id === selectedRoomId ? "text-text-muted" : "text-text-faint"
                           }`}
                         >
                           {room.opponentName} · {room.lastMessage || "메시지 없음"}
@@ -452,7 +452,7 @@ function ChatPageContent() {
                   {selectedRoom ? selectedRoom.productName : "채팅방을 선택하세요"}
                 </p>
                 {selectedRoom ? (
-                  <p className="truncate text-xs text-text-faint">{selectedRoom.opponentName}</p>
+                  <p className="truncate text-[13px] text-text-faint">{selectedRoom.opponentName}</p>
                 ) : null}
               </div>
             </div>
@@ -473,9 +473,9 @@ function ChatPageContent() {
                       className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm ${
+                        className={`max-w-[75%] whitespace-pre-wrap rounded-card px-3.5 py-2 text-base ${
                           isMine
-                            ? "bg-accent text-white"
+                            ? "bg-accent-soft text-accent-ink"
                             : "bg-surface-alt text-text"
                         }`}
                       >
@@ -499,7 +499,7 @@ function ChatPageContent() {
                   }
                 }}
                 placeholder="메시지를 입력하세요"
-                className="flex-1 rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface"
+                className="flex-1 rounded-field border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface"
                 disabled={selectedRoomId === null}
               />
               <button
