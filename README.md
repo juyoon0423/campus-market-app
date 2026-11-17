@@ -22,20 +22,21 @@
 | 백엔드 | Java 21, Spring Boot 4, Spring Data JPA, QueryDSL, Spring Security, JWT, OAuth2(카카오), WebSocket(STOMP), Redis, MySQL |
 | 프론트엔드 | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Axios, STOMP.js |
 | 외부 연동 | 카카오 로그인·카카오맵, Google Gemini API, Gmail SMTP |
-| 테스트 | JUnit 5 (12개 클래스 · 38개 케이스), Vitest, k6 |
+| 테스트 | JUnit 5 (12개 클래스 · 39개 케이스), Vitest, k6 |
 
 <br>
 
 ## 목차
 
 1. [주요 기능](#주요-기능)
-2. [아키텍처](#아키텍처)
-3. [핵심 문제 해결](#핵심-문제-해결)
-4. [그 밖의 트러블슈팅](#그-밖의-트러블슈팅)
-5. [테스트](#테스트)
-6. [실행 방법](#실행-방법)
-7. [프로젝트 구조](#프로젝트-구조)
-8. [알려진 한계와 다음 과제](#알려진-한계와-다음-과제)
+2. [화면](#화면)
+3. [아키텍처](#아키텍처)
+4. [핵심 문제 해결](#핵심-문제-해결)
+5. [그 밖의 트러블슈팅](#그-밖의-트러블슈팅)
+6. [테스트](#테스트)
+7. [실행 방법](#실행-방법)
+8. [프로젝트 구조](#프로젝트-구조)
+9. [알려진 한계와 다음 과제](#알려진-한계와-다음-과제)
 
 <br>
 
@@ -51,6 +52,31 @@
 | **찜하기 · 거래 완료** | 동시 요청에서 데이터가 틀어지지 않도록 락 전략 적용 ([아래 1번](#1-동시-요청에서-거래좋아요-데이터가-틀어지는-문제)) |
 | **AI 판매글 도우미** | Gemini API로 판매글 자동 작성과 부적절한 게시글 필터링 — API 키 보호를 위해 서버에서만 호출 |
 | **리뷰 · 신뢰 점수** | 거래 완료 후 구매자가 판매자 평가, 평균 평점은 DB 집계 쿼리로 계산 |
+
+<br>
+
+## 화면
+
+<p align="center">
+  <img src="docs/images/redesign/chat-realtime.gif" width="640" alt="구매자 창(왼쪽)에서 보낸 메시지가 판매자 창(오른쪽)에 바로 나타나고, 판매자의 답장이 구매자 창에 나타나는 실시간 채팅" />
+</p>
+<p align="center"><sub>실시간 1:1 채팅 — 구매자(왼쪽)와 판매자(오른쪽) 창을 나란히 열고 메시지를 주고받는 모습</sub></p>
+
+**메인 화면 리디자인 (전 → 후)**
+
+| 전 | 후 |
+| --- | --- |
+| <img src="docs/images/redesign/home-before.jpg" alt="리디자인 전 메인: 크림색 바탕, 코랄 강조색, 테두리와 그림자가 있는 카드, 알약 모양 필터 두 줄" /> | <img src="docs/images/redesign/home-after.jpg" alt="리디자인 후 메인: 흰 바탕, 상자 없는 카드에 제목·가격·거래 장소 3줄, 밑줄 카테고리 탭과 상태 토글 한 줄" /> |
+
+- 콘셉트는 **"물건 사진에 가격표 한 장"** 입니다. 카드의 테두리·그림자·hover 떠오름을 없애고 사진 아래에 제목, 가격("20,000원"), 거래 장소·등록 시각·찜 3줄만 둡니다. 판매 상태는 예약중·판매완료일 때만 사진 위 글자 태그로 표시합니다.
+- 이 외에 375px 화면의 가로 스크롤과 헤더 줄바꿈, 기준 미달 글자·경계 대비, 로그인 화면의 `<main>` 누락을 고쳤습니다.
+
+| 모바일 `/` (Lighthouse, 3회 중앙값) | 기준선 | 글꼴만 교체 | 화면 리팩토링 후 |
+| --- | --- | --- | --- |
+| LCP · 전송량 · 접근성 | 13.51초 · 2,361KB · 96 | 3.46초 · 351KB · 96 | 3.46초 · 356KB · **100** |
+
+- 성능 개선은 모든 페이지에서 미리 불러오던 2MB 가변 글꼴을 OS 한글 글꼴로 바꾼 데서 나왔고, 화면 리팩토링은 접근성을 올렸습니다. 측정 조건과 세 페이지 전체 수치: [docs/frontend-lighthouse.md](docs/frontend-lighthouse.md) · 디자인 결정과 범위: [docs/frontend-design.md](docs/frontend-design.md)
+- 화면 속 상품 사진은 [Unsplash](https://unsplash.com) 라이선스 사진입니다(사진 ID 목록은 [frontend-lighthouse.md 1절](docs/frontend-lighthouse.md#데모-데이터-전후-캡처-공통)). 계정과 상품은 모두 로컬 데모 데이터입니다.
 
 <br>
 
@@ -208,7 +234,7 @@ flowchart LR
 | 보안 | `StompAuthChannelInterceptorTest` — 정상·누락·위조 토큰, 인증 결과의 세션 등록 여부 / `FileUploadUtilTest` — 확장자 화이트리스트, 경로 조작 방지 |
 | 인증·회원 | `UserServiceTest`(비밀번호 해시), `EmailServiceTest`(인증 코드 만료) |
 | 입력 검증 | `UserControllerValidationTest`, `ProductControllerValidationTest`(멀티파트 요청 포함) |
-| 상품·리뷰 | `ProductServiceTest`(연관 데이터 정리 후 삭제, 거래 희망 장소 저장·수정, 상태 필터), `ReviewServiceTest`(중복 작성 방지, 신뢰 점수 평균 갱신) |
+| 상품·리뷰 | `ProductServiceTest`(연관 데이터 정리 후 삭제, 거래 희망 장소 저장·수정, 상태 필터, 목록 캐시 역직렬화 후 필드 유지), `ReviewServiceTest`(중복 작성 방지, 신뢰 점수 평균 갱신) |
 | 프론트엔드 | Vitest — `useCurrentUserId`(JWT 해석), `productApi`(API 클라이언트 호출) |
 
 ```bash
