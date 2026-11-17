@@ -1,54 +1,95 @@
 @import "tailwindcss";
 
+/*
+  콘셉트: "물건 사진에 가격표 한 장" (docs/frontend-design.md 2절)
+  토큰 이름은 2026-08 리뉴얼 그대로 두고 값만 바꿨다. 대비 값은 흰 바탕 기준.
+*/
 @theme {
   /* 배경 · 표면 · 보더 */
-  --color-bg: #fbf8f4;
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-alt: #f5efe5;
-  --color-border: #e8e0d3;
-  --color-border-strong: #d9cebc;
+  --color-surface-alt: #f3f4f5; /* 이미지 자리, 중립 배경 */
+  --color-border: #e3e5e8; /* 장식용 구분선 전용 */
+  --color-border-strong: #8a9099; /* 입력창 경계 3.22:1 */
 
   /* 텍스트 */
-  --color-text: #241c15;
-  --color-text-muted: #7a6f62;
-  --color-text-faint: #a89c8b;
+  --color-text: #17191c; /* 17.61:1 */
+  --color-text-muted: #4e5560; /* 7.52:1 */
+  --color-text-faint: #6b7280; /* 4.83:1 (회색 배경 위에서는 text-muted 사용) */
 
-  /* 브랜드 액센트 */
-  --color-accent: #ff6b45;
-  --color-accent-strong: #e8552f;
-  --color-accent-soft: #ffe4d6;
-  --color-accent-ink: #7a2a12;
+  /* 강조색: 주요 버튼과 선택된 탭에만 */
+  --color-accent: #17694a; /* 흰 글자 6.65:1 */
+  --color-accent-strong: #0f5a3e; /* hover, 흰 글자 8.23:1 */
+  --color-accent-soft: #e3f1eb;
+  --color-accent-ink: #0e4a33; /* accent-soft 위 8.82:1 */
 
-  /* 상태: 판매중 */
-  --color-green: #1fa971;
-  --color-green-soft: #dcf3e7;
-  --color-green-ink: #0f5c3d;
+  /* 상태: 판매중 (상세·마이페이지 배지) */
+  --color-green: #17694a;
+  --color-green-soft: #e3f1eb;
+  --color-green-ink: #0e4a33;
 
-  /* 상태: 예약중 */
-  --color-amber: #c97f13;
-  --color-amber-soft: #fbedd3;
+  /* 상태: 예약중 (사진 태그는 amber 바탕 + 흰 글자 5.43:1) */
+  --color-amber: #9a5b00;
+  --color-amber-soft: #fbf0dc;
   --color-amber-ink: #6b4308;
 
   /* 상태: 에러/삭제 */
-  --color-red: #c6483d;
-  --color-red-soft: #fbe4e1;
-  --color-red-ink: #7a2820;
+  --color-red: #c2362b; /* 5.45:1 */
+  --color-red-soft: #fcebe9;
+  --color-red-ink: #8a231b;
 
-  /* 반경: 인풋 10 / 버튼 14 / 카드·모달 20 */
-  --radius-field: 10px;
-  --radius-button: 14px;
-  --radius-card: 20px;
+  /* 반경: 입력창·버튼·사진 8 / 모달·패널 12 */
+  --radius-field: 8px;
+  --radius-button: 8px;
+  --radius-card: 12px;
 
-  /* 그림자: 웜톤 잉크 기반 */
-  --shadow-soft: 0 1px 2px rgba(36, 28, 21, 0.07);
-  --shadow-elevated: 0 6px 20px rgba(36, 28, 21, 0.09);
-  --shadow-floating: 0 16px 40px rgba(36, 28, 21, 0.14);
+  /* 그림자: 카드에는 쓰지 않는다. 떠 있는 요소(드롭다운, 모달, 하단 고정 바)에만 */
+  --shadow-soft: 0 1px 2px rgba(23, 25, 28, 0.06);
+  --shadow-elevated: 0 8px 24px rgba(23, 25, 28, 0.1);
+  --shadow-floating: 0 16px 40px rgba(23, 25, 28, 0.16);
 
   /* OS 한글 글꼴 스택. 2MB Pretendard 가변 글꼴을 뺀 이유: docs/frontend-lighthouse.md 3절 */
   --font-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
 }
 
-body {
-  font-feature-settings: "tnum" 1;
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-feature-settings: "tnum" 1;
+    /* 한글은 어절 단위로 줄바꿈하고, 칸보다 긴 영문·숫자만 강제로 끊는다 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  label {
+    touch-action: manipulation;
+  }
+
+  /* 키보드 포커스 표시: 마우스 클릭에는 나오지 않고 키보드 이동 때만 */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* 움직임 줄이기 설정을 켠 사용자에게는 전환·애니메이션을 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
