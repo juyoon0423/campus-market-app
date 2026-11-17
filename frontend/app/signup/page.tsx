@@ -10,7 +10,7 @@ import AuthLayout from "@/src/components/AuthLayout";
 import Button from "@/src/components/ui/Button";
 
 const fieldClasses =
-  "w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
+  "w-full rounded-field border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -184,7 +184,7 @@ export default function SignUpPage() {
                 {isVerifyingCode ? "인증 중..." : "인증하기"}
               </Button>
             </div>
-            <p className="mt-1.5 text-xs text-text-faint">
+            <p className="mt-1.5 text-[13px] text-text-faint">
               남은 시간: {formatTime(timerSeconds)}
             </p>
           </div>

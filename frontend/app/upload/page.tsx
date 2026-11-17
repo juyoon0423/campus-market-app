@@ -13,7 +13,7 @@ import FormSection from "@/src/components/ui/FormSection";
 import Button from "@/src/components/ui/Button";
 
 const fieldClasses =
-  "w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
+  "w-full rounded-field border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -149,7 +149,7 @@ export default function UploadPage() {
             <ChevronLeft className="h-4 w-4" />
             목록으로
           </Link>
-          <h1 className="mt-3 text-2xl font-extrabold text-text sm:text-[1.75rem]">
+          <h1 className="mt-3 text-2xl font-bold text-text">
             상품 등록
           </h1>
           <p className="mt-1.5 text-sm text-text-muted">
@@ -157,7 +157,7 @@ export default function UploadPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-card border border-border bg-surface p-6 shadow-soft md:p-8">
+        <form onSubmit={handleSubmit} className="space-y-0">
           <div className="space-y-8">
             <FormSection title="기본 정보" first>
               <div>
@@ -224,7 +224,7 @@ export default function UploadPage() {
                   type="button"
                   onClick={handleGenerateDescription}
                   disabled={isGeneratingDescription || isSubmitting}
-                  className="flex items-center gap-1.5 rounded-button bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-button border border-border-strong bg-surface px-3 py-1.5 text-[13px] font-semibold text-text transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:text-text-faint"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   {isGeneratingDescription ? "AI가 작성 중..." : "AI로 설명 쓰기"}
@@ -255,9 +255,9 @@ export default function UploadPage() {
                   accept="image/*"
                   onChange={handleImageChange}
                   disabled={isSubmitting}
-                  className="block w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text-muted file:mr-3 file:rounded-field file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-accent-strong"
+                  className="block w-full rounded-field border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text-muted file:mr-3 file:rounded-field file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-accent-strong"
                 />
-                <p className="mt-1.5 text-xs text-text-faint">여러 장 선택 가능해요</p>
+                <p className="mt-1.5 text-[13px] text-text-faint">여러 장 선택 가능해요</p>
               </div>
               {imagePreviews.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">

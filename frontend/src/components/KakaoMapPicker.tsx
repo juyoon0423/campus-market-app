@@ -136,11 +136,11 @@ export default function KakaoMapPicker({ initialLocation, onChange }: KakaoMapPi
         className="h-64 w-full overflow-hidden rounded-lg border border-slate-300 bg-slate-50"
       />
       {isLoading ? (
-        <p className="mt-2 text-xs text-slate-500">지도를 불러오는 중...</p>
+        <p className="mt-2 text-[13px] text-slate-500">지도를 불러오는 중...</p>
       ) : loadError ? (
-        <p className="mt-2 text-xs text-red-600">{loadError}</p>
+        <p className="mt-2 text-[13px] text-red-600">{loadError}</p>
       ) : (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-[13px] text-slate-500">
           지도를 클릭해 거래 희망 장소를 선택해주세요.
         </p>
       )}

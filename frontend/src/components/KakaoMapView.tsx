@@ -48,9 +48,9 @@ export default function KakaoMapView({ latitude, longitude, locationName }: Kaka
         className="h-56 w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
       />
       {isLoading ? (
-        <p className="mt-2 text-xs text-slate-500">지도를 불러오는 중...</p>
+        <p className="mt-2 text-[13px] text-slate-500">지도를 불러오는 중...</p>
       ) : loadError ? (
-        <p className="mt-2 text-xs text-red-600">{loadError}</p>
+        <p className="mt-2 text-[13px] text-red-600">{loadError}</p>
       ) : locationName ? (
         <p className="mt-2 text-sm text-slate-700">{locationName}</p>
       ) : null}

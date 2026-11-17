@@ -10,7 +10,7 @@ import AuthLayout from "@/src/components/AuthLayout";
 import Button from "@/src/components/ui/Button";
 
 const fieldClasses =
-  "w-full rounded-field border border-transparent bg-surface-alt px-3.5 py-2.5 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
+  "w-full rounded-field border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text outline-none transition-colors placeholder:text-text-faint focus:border-accent focus:bg-surface disabled:text-text-faint";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -102,7 +102,7 @@ export default function LoginPage() {
       <div className="mt-3">
         <button
           onClick={handleKakaoLogin}
-          className="w-full rounded-button bg-[#FEE500] px-4 py-3.5 text-[0.9375rem] font-bold text-black transition hover:bg-[#E5D400] active:bg-[#D4BC00]"
+          className="w-full rounded-button bg-[#FEE500] px-4 py-3.5 text-base font-bold text-black transition hover:bg-[#E5D400] active:bg-[#D4BC00]"
         >
           카카오로 시작하기
         </button>
