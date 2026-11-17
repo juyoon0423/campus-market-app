@@ -160,4 +160,5 @@
 | `pretendard` 의존성 제거 | `frontend/package.json` | 글꼴을 OS 스택으로 바꾼 뒤 쓰이지 않는다. 의존성 변경은 이번 범위 밖 |
 | lint 에러 4개(`set-state-in-effect`) | `app/page.tsx`, `app/products/[id]/edit/page.tsx`, `src/context/AuthContext.tsx`, `src/hooks/useUser.ts` | 리팩토링 전부터 있었다(main에서도 같은 8개). 그중 `AuthContext`의 `isHydrated` 처리와 `useUser`는 건드리지 않기로 한 로직이다 |
 | 검색창 지우기 버튼(검색어를 비우고 바로 다시 검색) | `app/page.tsx` | 검색어만 지우고 다른 필터는 유지한 채 다시 검색하는 수단이 없다("초기화"는 전부 비운다). 동작 추가라 범위 밖 |
+| 첫 페이지 상품 데이터를 서버에서 받아 HTML에 넣기(서버 컴포넌트/SSR) | `app/page.tsx`, `app/products/[id]/page.tsx` | 모바일 LCP 3.0~3.5초는 이미지가 아니라 HTML → JS → API → 사진 체인이 정한다. 이미지 우선순위로는 줄지 않았다([frontend-lighthouse.md](frontend-lighthouse.md) 4-2). 데이터 흐름이 바뀌는 변경이라 범위 밖 |
 | 카카오맵 타일 http 요청, `<area>` 역할 충돌 | 카카오맵 SDK | 외부 SDK 동작. Best Practices와 Accessibility 감점 원인 |
