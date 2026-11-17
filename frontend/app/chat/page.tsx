@@ -421,7 +421,7 @@ function ChatPageContent() {
                         <p className="truncate text-sm font-semibold">{room.productName}</p>
                         <p
                           className={`truncate text-[13px] ${
-                            room.id === selectedRoomId ? "text-text-muted" : "text-text-faint"
+                            "text-text-muted"
                           }`}
                         >
                           {room.opponentName} · {room.lastMessage || "메시지 없음"}

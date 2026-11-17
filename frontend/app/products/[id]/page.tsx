@@ -564,7 +564,7 @@ export default function ProductDetailPage() {
                     className="w-full rounded-field border border-border px-3 py-2 text-left transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <div className="font-semibold text-text">{room.opponentName}</div>
-                    <div className="text-[13px] text-text-faint">{room.lastMessage || "메시지 없음"}</div>
+                    <div className="text-[13px] text-text-muted">{room.lastMessage || "메시지 없음"}</div>
                   </button>
                 ))}
               </div>
