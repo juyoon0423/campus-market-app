@@ -44,8 +44,9 @@
   --shadow-elevated: 0 6px 20px rgba(36, 28, 21, 0.09);
   --shadow-floating: 0 16px 40px rgba(36, 28, 21, 0.14);
 
-  --font-sans: var(--font-pretendard), -apple-system, BlinkMacSystemFont,
-    "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  /* OS 한글 글꼴 스택. 2MB Pretendard 가변 글꼴을 뺀 이유: docs/frontend-lighthouse.md 3절 */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
 }
 
 body {
