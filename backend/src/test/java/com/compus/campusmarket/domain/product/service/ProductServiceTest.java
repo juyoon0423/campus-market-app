@@ -6,6 +6,7 @@ import com.compus.campusmarket.domain.chat.repository.ChatMessageRepository;
 import com.compus.campusmarket.domain.chat.repository.ChatRoomRepository;
 import com.compus.campusmarket.domain.product.dto.ProductCreateRequest;
 import com.compus.campusmarket.domain.product.dto.ProductDetailResponse;
+import com.compus.campusmarket.domain.product.dto.ProductListResponse;
 import com.compus.campusmarket.domain.product.dto.ProductUpdateRequest;
 import com.compus.campusmarket.domain.product.entity.Product;
 import com.compus.campusmarket.domain.product.entity.ProductLike;
@@ -169,6 +170,30 @@ class ProductServiceTest {
                 .map(response -> response.getId())
                 .collect(Collectors.toList());
         assertThat(soldOutResultIds).containsExactly(soldOutId);
+    }
+
+    // 목록 카드에 거래 장소와 등록 시각을 보여 주기 위해 목록 응답에 두 필드를 추가했다.
+    // 목록은 Redis 캐시(첫 페이지)를 거치므로, 캐시에 저장했다 다시 읽어도 값이 유지되는지까지 확인한다.
+    @Test
+    void 검색_목록에_거래장소와_등록시각이_포함되고_캐시에서_읽어도_유지된다() {
+        User seller = userRepository.save(newUser("seller"));
+        createdUserIds.add(seller.getId());
+        String keyword = "캐시키워드-" + UUID.randomUUID();
+        Long productId = createProduct(seller.getId(), keyword + " 상품");
+        Pageable pageable = PageRequest.of(0, 20);
+
+        // 1) 첫 조회: DB에서 읽고 캐시에 저장
+        ProductListResponse fromDb = productService.search(keyword, null, null, null, pageable).get(0);
+        assertThat(fromDb.getTradeLocationName()).isEqualTo("학생회관 앞");
+        assertThat(fromDb.getCreatedAt()).isNotNull();
+
+        // 2) DB 행을 지운 뒤 다시 조회: 결과가 나온다면 Redis 캐시에서 역직렬화된 값이다
+        productRepository.deleteById(productId);
+        List<ProductListResponse> fromCache = productService.search(keyword, null, null, null, pageable);
+        assertThat(fromCache).hasSize(1);
+        assertThat(fromCache.get(0).getId()).isEqualTo(productId);
+        assertThat(fromCache.get(0).getTradeLocationName()).isEqualTo("학생회관 앞");
+        assertThat(fromCache.get(0).getCreatedAt()).isEqualTo(fromDb.getCreatedAt());
     }
 
     private Long createProduct(Long sellerId, String title) {

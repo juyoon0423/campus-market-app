@@ -19,8 +19,11 @@ public class ProductCacheService {
     private final ProductRepository productRepository; // 레포지토리 주입
 
     // ✅ 외부 클래스로 분리되었기 때문에 이제 @Cacheable이 완벽하게 작동합니다!
+    // 캐시 이름에 버전을 붙인다. ProductListResponse에 필드를 추가하면 버전을 올려서,
+    // 배포 직후 예전 형식의 캐시(필드가 null로 읽힘)를 읽지 않게 한다. 예전 키는 TTL(10분) 뒤 사라진다.
+    // v2: tradeLocationName, createdAt 추가 (2026-11-17)
     @Cacheable(
-            value = "products",
+            value = "products-v2",
             key = "{#keyword, #category, #status, #pageable.pageNumber, #pageable.pageSize}",
             condition = "#pageable.pageNumber == 0"
     )
