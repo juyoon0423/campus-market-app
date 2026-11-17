@@ -4,3 +4,9 @@
 !.env.example
 
 .DS_Store
+
+# 로컬 에이전트 스킬 (커밋하지 않음)
+.agents/
+.claude/skills
+.extract-design-system/
+lighthouse-reports/
