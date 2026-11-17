@@ -3,21 +3,23 @@ import { ButtonHTMLAttributes } from "react";
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "lg" | "md" | "sm";
 
+// 비활성 주요 버튼은 회색 테두리로 바꾸지 않고 강조색을 흐리게만 한다(꺼진 버튼처럼 보이지 않게).
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "bg-accent text-white shadow-soft hover:bg-accent-strong disabled:bg-surface-alt disabled:text-text-faint disabled:shadow-none",
+    "bg-accent text-white hover:bg-accent-strong disabled:opacity-60 disabled:hover:bg-accent",
   secondary:
-    "bg-surface text-text border border-border-strong hover:bg-surface-alt disabled:text-text-faint disabled:border-border",
+    "bg-surface text-text border border-border-strong hover:bg-surface-alt disabled:text-text-faint",
   ghost:
     "bg-transparent text-text-muted hover:bg-surface-alt hover:text-text disabled:text-text-faint",
   danger:
     "bg-transparent text-red hover:bg-red-soft disabled:text-text-faint",
 };
 
+// 가장 작은 글자는 13px
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  lg: "rounded-button px-6 py-3.5 text-[0.9375rem]",
+  lg: "rounded-button px-5 py-3 text-base",
   md: "rounded-button px-4 py-2.5 text-sm",
-  sm: "rounded-field px-3 py-2 text-xs",
+  sm: "rounded-button px-3 py-2 text-[13px]",
 };
 
 export function buttonClasses(
@@ -26,8 +28,8 @@ export function buttonClasses(
   className = "",
 ) {
   return [
-    "inline-flex items-center justify-center gap-1.5 font-bold whitespace-nowrap transition-all",
-    "active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100",
+    "inline-flex items-center justify-center gap-1.5 font-semibold whitespace-nowrap transition-colors",
+    "disabled:cursor-not-allowed",
     VARIANT_CLASSES[variant],
     SIZE_CLASSES[size],
     className,
