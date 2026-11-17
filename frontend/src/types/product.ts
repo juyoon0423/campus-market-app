@@ -31,6 +31,10 @@ export type ProductListResponse = {
   viewCount: number;
   likeCount: number;
   isLiked: boolean;
+  /** 거래 희망 장소 이름. 기능 도입 전 상품은 null */
+  tradeLocationName?: string | null;
+  /** 등록 시각(서버 시간대 기준 ISO 문자열, 시간대 표기 없음) */
+  createdAt?: string | null;
 };
 
 export type ProductDetailResponse = {
