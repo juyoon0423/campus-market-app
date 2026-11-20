@@ -1,0 +1,36 @@
+    2026-11-20T09:54:16.188+09:00 TRACE 6257 --- [    Test worker] o.s.t.i.TransactionInterceptor           : Getting transaction for [com.compus.campusmarket.domain.product.service.ProductService.search]
+    2026-11-20T09:54:16.197+09:00 TRACE 6257 --- [    Test worker] o.s.cache.interceptor.CacheInterceptor   : Computed cache key '[캐시무효화-478070ad-d1f5-4e64-9d1b-6de22876acdb, null, null, 0, 20]' for operation Builder[public java.util.List com.compus.campusmarket.domain.product.service.ProductCacheService.getCachedProducts(java.lang.String,java.lang.String,com.compus.campusmarket.domain.product.entity.ProductStatus,org.springframework.data.domain.Pageable)] caches=[products-v2] | key='{#keyword, #category, #status, #pageable.pageNumber, #pageable.pageSize}' | keyGenerator='' | cacheManager='' | cacheResolver='' | condition='#pageable.pageNumber == 0' | unless='' | sync='false'
+    2026-11-20T09:54:16.204+09:00 TRACE 6257 --- [    Test worker] o.s.cache.interceptor.CacheInterceptor   : No cache entry for key '[캐시무효화-478070ad-d1f5-4e64-9d1b-6de22876acdb, null, null, 0, 20]' in cache(s) [products-v2]
+    2026-11-20T09:54:16.205+09:00 TRACE 6257 --- [    Test worker] o.s.t.i.TransactionInterceptor           : Getting transaction for [com.compus.campusmarket.domain.product.service.ProductCacheService.getCachedProducts]
+    2026-11-20T09:54:16.268+09:00 TRACE 6257 --- [    Test worker] o.s.t.i.TransactionInterceptor           : Completing transaction for [com.compus.campusmarket.domain.product.service.ProductCacheService.getCachedProducts]
+    2026-11-20T09:54:16.269+09:00 TRACE 6257 --- [    Test worker] o.s.cache.interceptor.CacheInterceptor   : Creating cache entry for key '[캐시무효화-478070ad-d1f5-4e64-9d1b-6de22876acdb, null, null, 0, 20]' in cache(s) [products-v2]
+    2026-11-20T09:54:16.269+09:00 TRACE 6257 --- [    Test worker] o.s.t.i.TransactionInterceptor           : Completing transaction for [com.compus.campusmarket.domain.product.service.ProductService.search]
+    2026-11-20T09:54:16.269+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Committing JPA transaction on EntityManager [SessionImpl(1300336760<open>)]
+    2026-11-20T09:54:16.318+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Creating new transaction with name [com.compus.campusmarket.domain.product.service.ProductService.completeTrade]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT
+    2026-11-20T09:54:16.319+09:00 TRACE 6257 --- [    Test worker] o.s.t.i.TransactionInterceptor           : Getting transaction for [com.compus.campusmarket.domain.product.service.ProductService.completeTrade]
+    2026-11-20T09:54:16.331+09:00 TRACE 6257 --- [    Test worker] o.s.t.i.TransactionInterceptor           : Completing transaction for [com.compus.campusmarket.domain.product.service.ProductService.completeTrade]
+    2026-11-20T09:54:16.331+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Committing JPA transaction on EntityManager [SessionImpl(1175654131<open>)]
+    2026-11-20T09:54:16.336+09:00 TRACE 6257 --- [    Test worker] o.s.cache.interceptor.CacheInterceptor   : Invalidating entire cache for operation Builder[public void com.compus.campusmarket.domain.product.service.ProductService.completeTrade(java.lang.Long,java.lang.Long,java.lang.Long)] caches=[products-v2] | key='' | keyGenerator='' | cacheManager='' | cacheResolver='' | condition='',true,false on method public void com.compus.campusmarket.domain.product.service.ProductService.completeTrade(java.lang.Long,java.lang.Long,java.lang.Long)
+    2026-11-20T09:54:16.336+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Creating new transaction with name [com.compus.campusmarket.domain.product.service.ProductService.search]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT,readOnly
+    2026-11-20T09:54:16.337+09:00 TRACE 6257 --- [    Test worker] o.s.t.i.TransactionInterceptor           : Getting transaction for [com.compus.campusmarket.domain.product.service.ProductService.search]
+    2026-11-20T09:54:16.337+09:00 TRACE 6257 --- [    Test worker] o.s.cache.interceptor.CacheInterceptor   : Computed cache key '[캐시무효화-478070ad-d1f5-4e64-9d1b-6de22876acdb, null, null, 0, 20]' for operation Builder[public java.util.List com.compus.campusmarket.domain.product.service.ProductCacheService.getCachedProducts(java.lang.String,java.lang.String,com.compus.campusmarket.domain.product.entity.ProductStatus,org.springframework.data.domain.Pageable)] caches=[products-v2] | key='{#keyword, #category, #status, #pageable.pageNumber, #pageable.pageSize}' | keyGenerator='' | cacheManager='' | cacheResolver='' | condition='#pageable.pageNumber == 0' | unless='' | sync='false'
+    2026-11-20T09:54:16.351+09:00 TRACE 6257 --- [    Test worker] o.s.cache.interceptor.CacheInterceptor   : Cache entry for key '[캐시무효화-478070ad-d1f5-4e64-9d1b-6de22876acdb, null, null, 0, 20]' found in cache(s) [products-v2]
+    2026-11-20T09:54:16.352+09:00 TRACE 6257 --- [    Test worker] o.s.t.i.TransactionInterceptor           : Completing transaction for [com.compus.campusmarket.domain.product.service.ProductService.search]
+    2026-11-20T09:54:16.352+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Committing JPA transaction on EntityManager [SessionImpl(1220055721<open>)]
+    2026-11-20T09:54:16.356+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Creating new transaction with name [org.springframework.data.jpa.repository.support.SimpleJpaRepository.existsById]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT,readOnly
+    2026-11-20T09:54:16.361+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Committing JPA transaction on EntityManager [SessionImpl(1412836991<open>)]
+    2026-11-20T09:54:16.362+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Creating new transaction with name [org.springframework.data.jpa.repository.support.SimpleJpaRepository.deleteById]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT
+    2026-11-20T09:54:16.365+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Committing JPA transaction on EntityManager [SessionImpl(1597705638<open>)]
+    2026-11-20T09:54:16.368+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Creating new transaction with name [org.springframework.data.jpa.repository.support.SimpleJpaRepository.deleteAllById]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT
+    2026-11-20T09:54:16.370+09:00 DEBUG 6257 --- [    Test worker] o.s.orm.jpa.JpaTransactionManager        : Committing JPA transaction on EntityManager [SessionImpl(1715809959<open>)]
+
+ProductListCacheEvictionTest > 거래를_완료하면_기본_목록에서_빠진다() FAILED
+    java.lang.AssertionError: 
+    Expecting
+      [2187L]
+    not to contain
+      [2187L]
+    but found
+      [2187L]
+        at com.compus.campusmarket.domain.product.service.ProductListCacheEvictionTest.거래를_완료하면_기본_목록에서_빠진다(ProductListCacheEvictionTest.java:131)
+

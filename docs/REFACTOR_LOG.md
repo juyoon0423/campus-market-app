@@ -47,6 +47,8 @@
   - **실제 메인 페이지(`GET /api/products` → `getAllProducts`)가 최적화된 엔드포인트가 아님.**
     k6가 실측한 건 `/api/products/search`이고, 프론트 홈 화면(`app/page.tsx`)은
     `getAllProducts()`를 호출해서 최적화 이전 코드가 그대로 돌아감
+    > 주석(2026-11-20): 이후 커밋 `7eece5d`에서 홈이 `/api/products/search`(`searchProducts({})`)로
+    > 바뀌었다(아래 "9)" 참고). 지금은 홈 화면 요청이 전부 검색 첫 페이지 캐시를 거친다.
 - 결론: 포트폴리오에서 삭제하기로 함. Campus Market은 동시성 항목 하나로 감.
 
 ### 4) "팀장 리뷰" 기준 필수 리팩토링 1차 (commit `0c60adf`)
@@ -311,6 +313,28 @@ Low 4건(EmailService 삭제, aria-label, edit 페이지 죽은 state, next/imag
   빨랐음(301ms vs 60ms). 이 벤치마크 수치는 단일 실행이며 반복 측정이 아님.
 - `ProductViewLikeConcurrencyTest` 신규 작성(조회 시 version 불변 회귀 테스트 + 조회·좋아요
   혼합 측정 시나리오).
+
+### 15) 목록 캐시 무효화 + 비동기 삭제 버그 수정 (2026-11-20, commit `c5ee542`)
+- **영향 범위 재판단** — `7eece5d` 이후 홈(`frontend/app/page.tsx`)이 페이지 파라미터 없이
+  `/api/products/search`를 불러, 홈 요청이 전부 첫 페이지 캐시(`products-v2`, TTL 10분)를 탐.
+  캐시를 비우는 코드가 없어 등록·삭제·상태 변경·수정이 홈에 최대 10분 늦게 반영되고 있었음.
+- **실패 테스트 먼저** — `ProductListCacheEvictionTest`: 등록·판매완료 변경·삭제·수정·거래완료
+  5개 케이스가 수정 전 모두 실패(쓰기 직후 조회에서 옛 목록).
+- **수정** — `ProductService`의 쓰기 5개 메서드와 `DummyDataService.insertDummyProducts`에
+  `@CacheEvict(allEntries = true)`. 캐시 키가 키워드·카테고리·상태 조합이라 상품 하나가 어느 키에
+  있는지 알 수 없어 전체 비우기를 택함. 전체 삭제 전략은 기본값 `KEYS` 대신 `SCAN(1000)`.
+- **계획에 없던 버그: 비운 직후에도 옛 캐시가 보임** — `@CacheEvict`만 넣은 상태에서 간헐 실패.
+  `redis-cli MONITOR`로 `SCAN` → (다음 조회의) `GET` → `UNLINK` 순서를 확인. Spring Data Redis 4.0의
+  캐시 writer가 기본으로 put/clear를 비동기로 보내고 기다리지 않음(`immediateWrites = false`).
+  `immediateWrites()` 적용. 같은 테스트 클래스 50회 반복: **적용 전 12/50회 실패 → 적용 후 0/50회**.
+  원문과 재현 절차는 [`docs/cache-eviction/`](cache-eviction/README.md).
+- **비우는 시점** — 컨트롤러에서 직접 부르는 지금 경로는 로그상 커밋 후에 비워짐. 다만 캐시·트랜잭션
+  advice 우선순위가 같아 순서가 보장되지 않고, 바깥 트랜잭션 안에서 불리면 커밋 전에 비워짐.
+  그 사이 다른 스레드의 조회가 옛 목록을 다시 캐시에 넣는 테스트를 추가해 수정 전 실패를 확인하고,
+  `RedisCacheManager.transactionAware()`로 커밋 직후 비우게 바꿈(수정 후 통과).
+- **남은 한계** — 목록의 좋아요·조회수는 매번 비우지 않아 최대 10분 지연(상세는 실시간). 조회가
+  커밋 전에 옛 값을 읽고 커밋·비우기 이후에 캐시에 넣는 좁은 경합은 남아 있고 TTL 10분이 상한.
+- 전체 백엔드 테스트 14개 클래스 46개 케이스 통과.
 
 ## 진행 중 / 다음에 할 일
 

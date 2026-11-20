@@ -1,0 +1,53 @@
+# label=before-immediateWrites runs=50 started=2026-11-20 09:43:18
+# git HEAD=e43fc0d, RedisCacheConfig immediateWrites line: 0
+run 1: tests=6 failed=0 
+run 2: tests=6 failed=0 
+run 3: tests=6 failed=1 삭제한_상품은_목록에서_사라진다()
+run 4: tests=6 failed=0 
+run 5: tests=6 failed=0 
+run 6: tests=6 failed=0 
+run 7: tests=6 failed=2 거래를_완료하면_기본_목록에서_빠진다() 상품을_등록하면_첫_페이지_목록에_바로_보인다()
+run 8: tests=6 failed=0 
+run 9: tests=6 failed=1 거래를_완료하면_기본_목록에서_빠진다()
+run 10: tests=6 failed=0 
+run 11: tests=6 failed=1 판매완료로_바꾸면_기본_목록에서_빠진다()
+run 12: tests=6 failed=1 거래를_완료하면_기본_목록에서_빠진다()
+run 13: tests=6 failed=0 
+run 14: tests=6 failed=1 거래를_완료하면_기본_목록에서_빠진다()
+run 15: tests=6 failed=0 
+run 16: tests=6 failed=0 
+run 17: tests=6 failed=0 
+run 18: tests=6 failed=0 
+run 19: tests=6 failed=1 거래를_완료하면_기본_목록에서_빠진다()
+run 20: tests=6 failed=0 
+run 21: tests=6 failed=0 
+run 22: tests=6 failed=0 
+run 23: tests=6 failed=2 거래를_완료하면_기본_목록에서_빠진다() 판매완료로_바꾸면_기본_목록에서_빠진다()
+run 24: tests=6 failed=0 
+run 25: tests=6 failed=0 
+run 26: tests=6 failed=0 
+run 27: tests=6 failed=0 
+run 28: tests=6 failed=0 
+run 29: tests=6 failed=1 상품을_수정하면_목록에_바뀐_가격이_보인다()
+run 30: tests=6 failed=1 상품을_수정하면_목록에_바뀐_가격이_보인다()
+run 31: tests=6 failed=0 
+run 32: tests=6 failed=0 
+run 33: tests=6 failed=0 
+run 34: tests=6 failed=0 
+run 35: tests=6 failed=0 
+run 36: tests=6 failed=0 
+run 37: tests=6 failed=0 
+run 38: tests=6 failed=0 
+run 39: tests=6 failed=0 
+run 40: tests=6 failed=0 
+run 41: tests=6 failed=0 
+run 42: tests=6 failed=1 삭제한_상품은_목록에서_사라진다()
+run 43: tests=6 failed=2 거래를_완료하면_기본_목록에서_빠진다() 상품을_등록하면_첫_페이지_목록에_바로_보인다()
+run 44: tests=6 failed=0 
+run 45: tests=6 failed=0 
+run 46: tests=6 failed=0 
+run 47: tests=6 failed=0 
+run 48: tests=6 failed=0 
+run 49: tests=6 failed=0 
+run 50: tests=6 failed=0 
+# finished=2026-11-20 09:47:49
