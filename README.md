@@ -22,7 +22,7 @@
 | 백엔드 | Java 21, Spring Boot 4, Spring Data JPA, QueryDSL, Spring Security, JWT, OAuth2(카카오), WebSocket(STOMP), Redis, MySQL |
 | 프론트엔드 | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Axios, STOMP.js |
 | 외부 연동 | 카카오 로그인·카카오맵, Google Gemini API, Gmail SMTP |
-| 테스트 | JUnit 5 (12개 클래스 · 39개 케이스), Vitest, k6 |
+| 테스트 | JUnit 5 (14개 클래스 · 46개 케이스), Vitest, k6 |
 
 ### 핵심 결과 한눈에 보기
 
@@ -246,6 +246,7 @@ flowchart LR
 | 인증·회원 | `UserServiceTest`(비밀번호 해시), `EmailServiceTest`(인증 코드 만료) |
 | 입력 검증 | `UserControllerValidationTest`, `ProductControllerValidationTest`(멀티파트 요청 포함) |
 | 상품·리뷰 | `ProductServiceTest`(연관 데이터 정리 후 삭제, 거래 희망 장소 저장·수정, 상태 필터, 목록 캐시 역직렬화 후 필드 유지), `ReviewServiceTest`(중복 작성 방지, 신뢰 점수 평균 갱신) |
+| 캐시 | `ProductListCacheEvictionTest` — 등록·수정·삭제·상태 변경·거래완료 직후 목록에 바로 반영, 바깥 트랜잭션 커밋 전 조회가 옛 목록을 다시 캐시에 넣지 못함 / `DummyDataServiceCacheEvictionTest` — 더미 데이터 삽입 후 캐시 비움 |
 | 프론트엔드 | Vitest — `useCurrentUserId`(JWT 해석), `productApi`(API 클라이언트 호출) |
 
 ```bash
@@ -366,8 +367,12 @@ campus-market-app/
 
 - **리뷰 작성 화면 미구현**: 리뷰 API와 중복 방지는 완성되어 있지만, 프론트엔드 작성 폼은 아직 없습니다.
 - **실행 환경 분리**: 설정이 로컬 개발 기준이라, 배포하려면 `local`/`prod` 프로필 분리가 먼저 필요합니다.
-- **Redis 캐시 무효화**: 검색 첫 페이지를 캐싱하지만 상품 변경 시 캐시를 비우는 로직이 없어, 변경 사항이 바로 반영되지 않을 수 있습니다.
-- **이메일 인증 코드 저장소**: 현재 서버 메모리에 저장해 단일 서버에서만 정상 동작합니다. 여러 서버로 늘릴 경우 Redis로 옮겨야 합니다.
+- **목록의 좋아요·조회수 지연**: 홈 목록(검색 첫 페이지)은 Redis에 10분간 캐시합니다. 상품 등록·수정·삭제·상태 변경 때는 커밋 직후 캐시를 비우지만, 좋아요와 조회수는 바뀔 때마다 비우지 않아 목록 숫자가 최대 10분 늦게 반영됩니다. 상세 화면은 실시간입니다.
+- **단일 서버 전제**: 서버를 여러 대로 늘리면 아래 네 곳이 깨집니다. 지금은 배포 환경이 없어 단일 서버를 유지하고, 늘릴 때 함께 바꿔야 할 목록으로 남깁니다.
+  - 이메일 인증 코드를 서버 메모리에 저장(`EmailService`) → 발송과 검증이 다른 서버로 가면 가입 실패
+  - 이미지를 로컬 디스크에 저장(`FileUploadUtil`) → 다른 서버에서는 이미지 404
+  - OAuth2 로그인 인가 요청을 기본 설정(HttpSession)으로 보관 → 시작과 콜백이 다른 서버로 가면 로그인 실패
+  - 채팅 브로커가 서버 메모리의 SimpleBroker(`WebSocketConfig`) → 다른 서버에 붙은 상대에게 실시간 메시지가 가지 않음(메시지는 DB에 저장되어 방에 다시 들어오면 보임)
 - **테스트 공백**: 카카오 로그인 전체 흐름, Gemini 연동 실패 시 동작 등은 아직 테스트가 없습니다.
 
 <br>

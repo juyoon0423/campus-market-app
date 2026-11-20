@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Slf4j
 @Service
@@ -45,6 +45,9 @@ public class ProductService {
     private final ProductCacheService productCacheService;
     private final ProductLikeService productLikeService;
 
+    // 목록 첫 페이지 캐시는 키워드·카테고리·상태 조합마다 따로 저장된다. 상품 하나가 바뀌면 어느 조합에
+    // 들어 있는지 알 수 없으므로 캐시 전체를 비운다(allEntries).
+    @CacheEvict(value = ProductCacheService.PRODUCTS_CACHE, allEntries = true)
     @Transactional
     public Long createProduct(Long sellerId, ProductCreateRequest request, List<String> imageUrls) {
 
@@ -113,6 +116,7 @@ public class ProductService {
         return new ProductDetailResponse(product, isLiked);
     }
 
+    @CacheEvict(value = ProductCacheService.PRODUCTS_CACHE, allEntries = true)
     @Transactional
     public void updateProduct(Long productId, Long userId, ProductUpdateRequest request, List<String> newImageUrls) {
         Product product = productRepository.findById(productId)
@@ -147,6 +151,7 @@ public class ProductService {
         }
     }
 
+    @CacheEvict(value = ProductCacheService.PRODUCTS_CACHE, allEntries = true)
     @Transactional
     public void deleteProduct(Long productId, Long userId) {
         Product product = productRepository.findById(productId)
@@ -190,6 +195,7 @@ public class ProductService {
     }
 
     // completeTrade와 같은 이유(동시 상태 변경 요청)로 비관적 락을 재사용한다.
+    @CacheEvict(value = ProductCacheService.PRODUCTS_CACHE, allEntries = true)
     @Transactional
     public void updateStatus(Long productId, Long userId, ProductStatus status) {
         Product product = productRepository.findByIdForUpdate(productId)
@@ -210,6 +216,7 @@ public class ProductService {
 
     // 거래 완료는 호출 빈도가 낮고, 실패 시 "다시 눌러주세요"라고 요구하기 어려운 사용자 액션이라
     // 낙관적 재시도 대신 비관적 락으로 동시 완료 처리를 원천 차단한다(findByIdForUpdate).
+    @CacheEvict(value = ProductCacheService.PRODUCTS_CACHE, allEntries = true)
     @Transactional
     public void completeTrade(Long productId, Long sellerId, Long buyerId) {
         // 1. 상품 조회 (락 획득 — 동시에 들어온 다른 completeTrade 요청은 이 트랜잭션이 끝날 때까지 대기)

@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductCacheService {
 
+    // 쓰기 작업(ProductService)에서 이 이름으로 캐시를 비우므로 상수로 공유한다.
+    public static final String PRODUCTS_CACHE = "products-v2";
+
     private final ProductRepository productRepository; // 레포지토리 주입
 
     // ✅ 외부 클래스로 분리되었기 때문에 이제 @Cacheable이 완벽하게 작동합니다!
@@ -23,7 +26,7 @@ public class ProductCacheService {
     // 배포 직후 예전 형식의 캐시(필드가 null로 읽힘)를 읽지 않게 한다. 예전 키는 TTL(10분) 뒤 사라진다.
     // v2: tradeLocationName, createdAt 추가 (2026-11-17)
     @Cacheable(
-            value = "products-v2",
+            value = PRODUCTS_CACHE,
             key = "{#keyword, #category, #status, #pageable.pageNumber, #pageable.pageSize}",
             condition = "#pageable.pageNumber == 0"
     )

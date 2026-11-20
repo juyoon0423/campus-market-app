@@ -2,7 +2,9 @@ package com.compus.campusmarket.domain.dummy.service;
 
 
 import lombok.RequiredArgsConstructor;
+import com.compus.campusmarket.domain.product.service.ProductCacheService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,9 @@ public class DummyDataService {
 
     private final JdbcTemplate jdbcTemplate;
 
+    // 리포지토리를 거치지 않고 JDBC로 직접 넣기 때문에 ProductService의 캐시 비우기를 타지 않는다.
+    // 여기서도 목록 캐시를 비워야 더미 데이터가 바로 목록에 보인다(커밋 후 비움: RedisCacheConfig transactionAware).
+    @CacheEvict(value = ProductCacheService.PRODUCTS_CACHE, allEntries = true)
     @Transactional
     public void insertDummyProducts() {
         // 이미 데이터가 많다면 실행하지 않음

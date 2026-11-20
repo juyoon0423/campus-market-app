@@ -170,7 +170,7 @@
 
 | 항목 | 위치 | 이유 |
 |---|---|---|
-| 상품 등록·수정·상태 변경 때 목록 캐시 비우기(`@CacheEvict`) | `ProductService`, `ProductCacheService` | 지금은 비우는 코드가 없어서 목록에 최대 10분 늦게 반영된다. 동작이 바뀌는 변경이다 |
+| **완료** — 상품 등록·수정·상태 변경 때 목록 캐시 비우기(`@CacheEvict`) | `ProductService`, `ProductCacheService` | (완료 전 기록) 지금은 비우는 코드가 없어서 목록에 최대 10분 늦게 반영된다. 동작이 바뀌는 변경이다. → 등록·수정·삭제·상태 변경·거래완료 때 커밋 직후 비우도록 수정함 |
 | `pretendard` 의존성 제거 | `frontend/package.json` | 글꼴을 OS 스택으로 바꾼 뒤 쓰이지 않는다. 의존성 변경은 이번 범위 밖 |
 | lint 에러 4개(`set-state-in-effect`) | `app/page.tsx`, `app/products/[id]/edit/page.tsx`, `src/context/AuthContext.tsx`, `src/hooks/useUser.ts` | 리팩토링 전부터 있었다(main에서도 같은 8개). 그중 `AuthContext`의 `isHydrated` 처리와 `useUser`는 건드리지 않기로 한 로직이다 |
 | 검색창 지우기 버튼(검색어를 비우고 바로 다시 검색) | `app/page.tsx` | 검색어만 지우고 다른 필터는 유지한 채 다시 검색하는 수단이 없다("초기화"는 전부 비운다). 동작 추가라 범위 밖 |
