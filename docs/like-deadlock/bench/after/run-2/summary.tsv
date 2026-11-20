@@ -1,0 +1,4 @@
+scenario	products	requests	deadlocks	row_lock_waits	retry_deadlock	retry_optimistic	retry_unique	exhausted	count_mismatch	latency_p50_ms	latency_p95_ms	latency_max_ms	round_p50_ms	round_p95_ms	total_s
+high	1	1000	0	950	0	0	0	0	0	31.3	58.7	76.7	51.2	77.1	5.9
+mid	5	1000	0	683	0	0	0	0	0	17.0	25.3	36.4	24.1	28.6	4.7
+none	20	1000	0	0	0	0	0	0	0	13.7	20.2	29.9	17.9	23.3	7.8

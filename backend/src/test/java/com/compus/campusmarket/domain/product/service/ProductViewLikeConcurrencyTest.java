@@ -159,6 +159,7 @@ class ProductViewLikeConcurrencyTest {
         CountDownLatch done = new CountDownLatch(threads);
 
         // 재시도 횟수는 운영 코드를 건드리지 않고 ProductService.toggleLike가 충돌 시 남기는 WARN 로그로 센다.
+        // (REFACTOR_LOG 16) 이후 좋아요는 비관적 락을 먼저 잡고 재시도 루프가 없어져, 이 로그는 더 이상 남지 않는다.)
         LogCollector retryLog = LogCollector.attach(ProductService.class.getName(), Level.WARN);
         try {
             for (Long likerId : likerIds) {

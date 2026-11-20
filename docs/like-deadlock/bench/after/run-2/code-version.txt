@@ -1,0 +1,5 @@
+base commit: 4c0baca
+src/main working-tree changes:
+ M src/main/java/com/compus/campusmarket/domain/product/repository/ProductRepository.java
+ M src/main/java/com/compus/campusmarket/domain/product/service/ProductLikeService.java
+ M src/main/java/com/compus/campusmarket/domain/product/service/ProductService.java

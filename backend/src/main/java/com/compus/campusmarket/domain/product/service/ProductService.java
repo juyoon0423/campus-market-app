@@ -18,8 +18,6 @@ import com.compus.campusmarket.domain.user.entity.User;
 import com.compus.campusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.ConcurrencyFailureException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
@@ -32,8 +30,6 @@ import org.springframework.cache.annotation.CacheEvict;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProductService {
-
-    private static final int LIKE_TOGGLE_MAX_ATTEMPTS = 6;
 
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
@@ -234,35 +230,14 @@ public class ProductService {
         product.completeTrade(buyer, sellerId);
     }
 
-    // 좋아요는 호출 빈도가 높고 경합 비용이 낮아, 락을 오래 잡는 대신 낙관적 락(@Version) + 짧은 재시도를 택한다.
-    // 실제 DB 갱신은 ProductLikeService.applyToggle(REQUIRES_NEW)에서 시도마다 새 트랜잭션으로 수행된다.
-    //
-    // 처음엔 ObjectOptimisticLockingFailureException만 재시도 대상으로 잡았는데, 인기 상품처럼 같은 row에
-    // 요청이 몰리면 버전 충돌이 나기도 전에 UPDATE 문 자체가 InnoDB 데드락(에러 1213)으로 실패하는 사례가
-    // 실측에서 확인됐다. ConcurrencyFailureException(낙관적 락 실패와 데드락의 공통 상위 타입)으로 넓혀서 재시도한다.
+    // 좋아요는 상품 행에 비관적 락을 먼저 잡고 처리한다(ProductLikeService.applyToggle).
+    // 예전에는 "경합이 낮다"는 판단으로 낙관적 락(@Version) + 최대 6회 재시도를 썼지만, product_like INSERT의
+    // FK 검사가 상품 행에 공유 락을 걸어 동시 좋아요끼리 데드락이 구조적으로 생겼고(상품 1개 동시 20건 × 50라운드
+    // 측정, 3회 중앙값: 데드락 1,971회, 재시도 소진 14건), 재시도는 원인이 아니라 증상을 덮고 있었다(docs/like-deadlock/).
+    // 락을 먼저 잡으면 데드락·버전 충돌·유니크 위반이 이 경로에서 생기지 않으므로 재시도 루프를 없앴다.
+    // 그래도 예상 밖의 락 실패(예: 락 대기 시간 초과)가 나면 GlobalExceptionHandler가 409로 응답한다.
     public String toggleLike(Long productId, Long userId) {
-        for (int attempt = 1; attempt <= LIKE_TOGGLE_MAX_ATTEMPTS; attempt++) {
-            try {
-                return productLikeService.applyToggle(productId, userId);
-            } catch (ConcurrencyFailureException | DataIntegrityViolationException e) {
-                log.warn("좋아요 처리 충돌 발생(시도 {}/{}), productId={}, userId={}, 원인={}",
-                        attempt, LIKE_TOGGLE_MAX_ATTEMPTS, productId, userId, e.getClass().getSimpleName());
-                if (attempt == LIKE_TOGGLE_MAX_ATTEMPTS) {
-                    throw new IllegalStateException("동시 요청이 많아 좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
-                }
-                sleepBeforeRetry(attempt);
-            }
-        }
-        throw new IllegalStateException("좋아요 처리에 실패했습니다.");
-    }
-
-    // 재시도가 한꺼번에 몰려 다시 충돌하는 걸 줄이기 위한 짧은 지터 백오프
-    private void sleepBeforeRetry(int attempt) {
-        try {
-            Thread.sleep((long) (Math.random() * 20 * attempt));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        return productLikeService.applyToggle(productId, userId);
     }
 
     @Transactional(readOnly = true)

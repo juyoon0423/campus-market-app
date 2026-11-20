@@ -34,8 +34,6 @@ class ProductConcurrencyTest {
     @Autowired
     private ProductService productService;
     @Autowired
-    private ProductLikeService productLikeService;
-    @Autowired
     private ProductRepository productRepository;
     @Autowired
     private ProductLikeRepository productLikeRepository;
@@ -141,33 +139,6 @@ class ProductConcurrencyTest {
     }
 
     @Test
-    @DisplayName("좋아요 낙관적 락+재시도 vs 비관적 락의 처리량을 실측 비교한다")
-    void benchmarkOptimisticVsPessimisticLike() throws InterruptedException {
-        int concurrency = 20; // 프로젝트 기존 k6 부하테스트(VU 20)와 동일한 동시성 수준
-
-        Long optimisticProductId = productId; // setUp에서 만든 상품 재사용
-        List<Long> optimisticLikerIds = createLikers(concurrency, "opt");
-        long optimisticElapsedMs = measureElapsedMs(() ->
-                runConcurrently(concurrency, optimisticLikerIds,
-                        likerId -> productService.toggleLike(optimisticProductId, likerId)));
-        long optimisticActualRows = productLikeRepository.countByProduct_Id(optimisticProductId);
-
-        Long pessimisticProductId = createProduct(seller);
-        List<Long> pessimisticLikerIds = createLikers(concurrency, "pes");
-        long pessimisticElapsedMs = measureElapsedMs(() ->
-                runConcurrently(concurrency, pessimisticLikerIds,
-                        likerId -> productLikeService.applyTogglePessimistic(pessimisticProductId, likerId)));
-        long pessimisticActualRows = productLikeRepository.countByProduct_Id(pessimisticProductId);
-
-        log.info("[벤치마크] 동시 요청 수={}", concurrency);
-        log.info("[벤치마크-낙관적+재시도] 소요={}ms, 실제 저장된 row 수={}", optimisticElapsedMs, optimisticActualRows);
-        log.info("[벤치마크-비관적] 소요={}ms, 실제 저장된 row 수={}", pessimisticElapsedMs, pessimisticActualRows);
-
-        assertThat(optimisticActualRows).isEqualTo(concurrency);
-        assertThat(pessimisticActualRows).isEqualTo(concurrency);
-    }
-
-    @Test
     @DisplayName("거래완료된 상품은 updateStatus로도 되돌릴 수 없어야 한다")
     void updateStatus_afterCompleteTrade_shouldBeRejected() {
         User buyer = userRepository.save(newUser("buyer"));
@@ -192,16 +163,6 @@ class ProductConcurrencyTest {
         return likerIds;
     }
 
-    private long measureElapsedMs(ThrowingRunnable action) throws InterruptedException {
-        long start = System.currentTimeMillis();
-        action.run();
-        return System.currentTimeMillis() - start;
-    }
-
-    @FunctionalInterface
-    private interface ThrowingRunnable {
-        void run() throws InterruptedException;
-    }
 
     private <T> void runConcurrently(int concurrency, List<T> inputs, ThrowingConsumer<T> action) throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(concurrency);

@@ -133,7 +133,27 @@ A: UPDATE 성공            01:25:40.563   ← B가 되돌려지자 진행
 | 실험 | 순서 | 결과 |
 |---|---|---|
 | `04-atomic-after-insert` | INSERT → 원자적 UPDATE | 3/3회 데드락(원자적 UPDATE만으로는 해결 안 됨) |
-| `05-lock-first` (A) | `SELECT … FOR UPDATE` → INSERT → UPDATE | 3/3회 정상, B는 FOR UPDATE에서 A 커밋까지 대기 |
+| `05-lock-first` (채택한 A) | `SELECT … FOR UPDATE` → INSERT → UPDATE | 3/3회 정상, B는 FOR UPDATE에서 A 커밋까지 대기 |
 | `06-update-first` | 원자적 UPDATE → INSERT | 3/3회 정상 |
 | `07-no-counter` | INSERT만, 개수는 COUNT | 3/3회 정상, 대기 없음 |
 | `08-separate-counter` | INSERT → 별도 카운터 테이블 UPDATE | 3/3회 정상 |
+
+## 수정 후 측정 (`bench/`)
+
+`LikeContentionBenchmarkTest`를 Docker MySQL에서 수정 전(`bench/before/`, 커밋 `4c0baca`)과 수정 후(`bench/after/`)에
+같은 조건으로 각 3회 실행했다. 동시 20건 × 50라운드 = 1,000건(예열 2라운드는 기록하지 않음).
+회차별 폴더(`run-1`~`run-3`)에 `summary.tsv`(요약), `*-rounds.tsv`(라운드별), `*-requests.csv`(요청별 응답 시간),
+`code-version.txt`가 있고, 3회 집계는 `bench/summary-3runs.tsv`(`bench/aggregate.py`로 생성)에 있다.
+표는 3회의 중앙값(최소~최대)이다.
+
+| 시나리오 | 데드락 | 낙관적 충돌 | 재시도 소진 | 응답 p50 | 응답 p95 |
+|---|---|---|---|---|---|
+| 상품 1개 (동시 20건) | 1,971 (1,950~1,974) → 0 | 623 (592~624) → 0 | 14 (14~15) → 0 | 84.3 (81.8~86.5) → 31.0 (30.6~31.3)ms | 195.7 (186.8~202.7) → 56.0 (55.9~58.7)ms |
+| 상품 5개 (상품당 4건) | 402 (400~430) → 0 | 283 (278~297) → 0 | 0 → 0 | 22.3 (22.2~23.1) → 16.9 (16.5~17.0)ms | 56.7 (56.1~60.1) → 25.3 (24.5~25.6)ms |
+| 상품 20개 (상품당 1건) | 0 → 0 | 0 → 0 | 0 → 0 | 12.9 (12.4~13.6) → 13.7 (13.4~13.9)ms | 19.5 (17.6~19.5) → 20.2 (19.2~20.6)ms |
+
+- 데드락 수와 행 락 대기 수는 `INNODB_METRICS`(`lock_deadlocks`, `lock_row_lock_waits`) 증가분이다.
+- 재시도 원인은 수정 전 코드의 재시도 경고 로그(`원인=...`)를 셌다. 수정 후에는 재시도 루프가 없어 0이다.
+  "재시도 소진"은 수정 전후 모두 `toggleLike`가 예외로 끝난 요청 수다.
+- 수정 후 상품 1개 시나리오의 행 락 대기 950회(3회 모두 같음, 라운드당 19회)는 FOR UPDATE에서 순서를 기다린 횟수다.
+  데드락 대신 줄을 서는 비용이다.
