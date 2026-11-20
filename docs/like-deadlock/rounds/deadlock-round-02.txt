@@ -1,0 +1,113 @@
+# round=2 product_id=2 liker_ids=[23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42]
+# user ids are test accounts created for this round
+
+------------------------
+LATEST DETECTED DEADLOCK
+------------------------
+2026-11-20 01:23:51 281472581824256
+*** (1) TRANSACTION:
+TRANSACTION 2533, ACTIVE 0 sec starting index read
+mysql tables in use 1, locked 1
+LOCK WAIT 7 lock struct(s), heap size 1128, 3 row lock(s), undo log entries 1
+MySQL thread id 17, OS thread handle 281473150086912, query id 1996 172.17.0.1 root updating
+update product set buyer_id=null,category='전자기기',description='설명',like_count=18,price=10000,user_id=22,status='SELLING',title='데드락 수집 상품',trade_latitude=null,trade_location_name=null,trade_longitude=null,updated_at='2026-11-20 10:23:51.960818',version=18 where id=2 and version=17
+
+*** (1) HOLDS THE LOCK(S):
+RECORD LOCKS space id 14 page no 4 n bits 72 index PRIMARY of table `campus_market`.`product` trx id 2533 lock mode S locks rec but not gap
+Record lock, heap no 3 PHYSICAL RECORD: n_fields 18; compact format; info bits 0
+ 0: len 8; hex 8000000000000002; asc         ;;
+ 1: len 6; hex 0000000009e3; asc       ;;
+ 2: len 7; hex 010000011503e9; asc        ;;
+ 3: len 8; hex 99bb68a5f309ebb8; asc   h     ;;
+ 4: len 8; hex 99bb68a5f30e51e2; asc   h   Q ;;
+ 5: len 12; hex eca084ec9e90eab8b0eab8b0; asc             ;;
+ 6: len 6; hex ec84a4ebaa85; asc       ;;
+ 7: len 4; hex 80000011; asc     ;;
+ 8: len 8; hex 8000000000002710; asc       ' ;;
+ 9: len 1; hex 02; asc  ;;
+ 10: len 23; hex eb8db0eb939ceb9dbd20ec8898eca79120ec8381ed9288; asc                        ;;
+ 11: SQL NULL;
+ 12: SQL NULL;
+ 13: SQL NULL;
+ 14: len 8; hex 8000000000000011; asc         ;;
+ 15: len 4; hex 80000000; asc     ;;
+ 16: SQL NULL;
+ 17: len 8; hex 8000000000000016; asc         ;;
+
+
+*** (1) WAITING FOR THIS LOCK TO BE GRANTED:
+RECORD LOCKS space id 14 page no 4 n bits 72 index PRIMARY of table `campus_market`.`product` trx id 2533 lock_mode X locks rec but not gap waiting
+Record lock, heap no 3 PHYSICAL RECORD: n_fields 18; compact format; info bits 0
+ 0: len 8; hex 8000000000000002; asc         ;;
+ 1: len 6; hex 0000000009e3; asc       ;;
+ 2: len 7; hex 010000011503e9; asc        ;;
+ 3: len 8; hex 99bb68a5f309ebb8; asc   h     ;;
+ 4: len 8; hex 99bb68a5f30e51e2; asc   h   Q ;;
+ 5: len 12; hex eca084ec9e90eab8b0eab8b0; asc             ;;
+ 6: len 6; hex ec84a4ebaa85; asc       ;;
+ 7: len 4; hex 80000011; asc     ;;
+ 8: len 8; hex 8000000000002710; asc       ' ;;
+ 9: len 1; hex 02; asc  ;;
+ 10: len 23; hex eb8db0eb939ceb9dbd20ec8898eca79120ec8381ed9288; asc                        ;;
+ 11: SQL NULL;
+ 12: SQL NULL;
+ 13: SQL NULL;
+ 14: len 8; hex 8000000000000011; asc         ;;
+ 15: len 4; hex 80000000; asc     ;;
+ 16: SQL NULL;
+ 17: len 8; hex 8000000000000016; asc         ;;
+
+
+*** (2) TRANSACTION:
+TRANSACTION 2534, ACTIVE 0 sec starting index read
+mysql tables in use 1, locked 1
+LOCK WAIT 7 lock struct(s), heap size 1128, 3 row lock(s), undo log entries 1
+MySQL thread id 25, OS thread handle 281473030549248, query id 1997 172.17.0.1 root updating
+update product set buyer_id=null,category='전자기기',description='설명',like_count=18,price=10000,user_id=22,status='SELLING',title='데드락 수집 상품',trade_latitude=null,trade_location_name=null,trade_longitude=null,updated_at='2026-11-20 10:23:51.960819',version=18 where id=2 and version=17
+
+*** (2) HOLDS THE LOCK(S):
+RECORD LOCKS space id 14 page no 4 n bits 72 index PRIMARY of table `campus_market`.`product` trx id 2534 lock mode S locks rec but not gap
+Record lock, heap no 3 PHYSICAL RECORD: n_fields 18; compact format; info bits 0
+ 0: len 8; hex 8000000000000002; asc         ;;
+ 1: len 6; hex 0000000009e3; asc       ;;
+ 2: len 7; hex 010000011503e9; asc        ;;
+ 3: len 8; hex 99bb68a5f309ebb8; asc   h     ;;
+ 4: len 8; hex 99bb68a5f30e51e2; asc   h   Q ;;
+ 5: len 12; hex eca084ec9e90eab8b0eab8b0; asc             ;;
+ 6: len 6; hex ec84a4ebaa85; asc       ;;
+ 7: len 4; hex 80000011; asc     ;;
+ 8: len 8; hex 8000000000002710; asc       ' ;;
+ 9: len 1; hex 02; asc  ;;
+ 10: len 23; hex eb8db0eb939ceb9dbd20ec8898eca79120ec8381ed9288; asc                        ;;
+ 11: SQL NULL;
+ 12: SQL NULL;
+ 13: SQL NULL;
+ 14: len 8; hex 8000000000000011; asc         ;;
+ 15: len 4; hex 80000000; asc     ;;
+ 16: SQL NULL;
+ 17: len 8; hex 8000000000000016; asc         ;;
+
+
+*** (2) WAITING FOR THIS LOCK TO BE GRANTED:
+RECORD LOCKS space id 14 page no 4 n bits 72 index PRIMARY of table `campus_market`.`product` trx id 2534 lock_mode X locks rec but not gap waiting
+Record lock, heap no 3 PHYSICAL RECORD: n_fields 18; compact format; info bits 0
+ 0: len 8; hex 8000000000000002; asc         ;;
+ 1: len 6; hex 0000000009e3; asc       ;;
+ 2: len 7; hex 010000011503e9; asc        ;;
+ 3: len 8; hex 99bb68a5f309ebb8; asc   h     ;;
+ 4: len 8; hex 99bb68a5f30e51e2; asc   h   Q ;;
+ 5: len 12; hex eca084ec9e90eab8b0eab8b0; asc             ;;
+ 6: len 6; hex ec84a4ebaa85; asc       ;;
+ 7: len 4; hex 80000011; asc     ;;
+ 8: len 8; hex 8000000000002710; asc       ' ;;
+ 9: len 1; hex 02; asc  ;;
+ 10: len 23; hex eb8db0eb939ceb9dbd20ec8898eca79120ec8381ed9288; asc                        ;;
+ 11: SQL NULL;
+ 12: SQL NULL;
+ 13: SQL NULL;
+ 14: len 8; hex 8000000000000011; asc         ;;
+ 15: len 4; hex 80000000; asc     ;;
+ 16: SQL NULL;
+ 17: len 8; hex 8000000000000016; asc         ;;
+
+*** WE ROLL BACK TRANSACTION (2)

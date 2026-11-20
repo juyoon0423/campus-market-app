@@ -1,0 +1,14 @@
++--------------+------------+-----------+---------------+-------------+-----------+
+| table        | index_name | lock_type | lock_mode     | lock_status | lock_data |
++--------------+------------+-----------+---------------+-------------+-----------+
+| product      | PRIMARY    | RECORD    | S,REC_NOT_GAP | GRANTED     | 9001      |
+| product      | NULL       | TABLE     | IS            | GRANTED     | NULL      |
+| product_like | NULL       | TABLE     | IX            | GRANTED     | NULL      |
+| users        | PRIMARY    | RECORD    | S,REC_NOT_GAP | GRANTED     | 9002      |
+| users        | NULL       | TABLE     | IS            | GRANTED     | NULL      |
++--------------+------------+-----------+---------------+-------------+-----------+
++--------------+------------+-----------+-----------+-------------+-----------+
+| table        | index_name | lock_type | lock_mode | lock_status | lock_data |
++--------------+------------+-----------+-----------+-------------+-----------+
+| product_like | NULL       | TABLE     | IX        | GRANTED     | NULL      |
++--------------+------------+-----------+-----------+-------------+-----------+

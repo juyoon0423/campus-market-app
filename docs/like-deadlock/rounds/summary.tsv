@@ -1,0 +1,13 @@
+round	product_id	deadlocks(lock_deadlocks delta)	exhausted	like_count	rows
+1	1	50	1	19	19
+2	2	53	2	18	18
+3	3	48	1	19	19
+4	4	46	2	18	18
+5	5	40	0	20	20
+6	6	42	0	20	20
+7	7	39	0	20	20
+8	8	42	1	19	19
+9	9	40	1	19	19
+10	10	40	0	20	20
+11	11	37	0	20	20
+12	12	38	0	20	20

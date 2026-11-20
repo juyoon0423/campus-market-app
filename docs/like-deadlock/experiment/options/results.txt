@@ -1,0 +1,15 @@
+04-atomic-after-insert run1: A=OK B=ERROR 1213
+04-atomic-after-insert run2: A=OK B=ERROR 1213
+04-atomic-after-insert run3: A=OK B=ERROR 1213
+05-lock-first run1: A=OK B=OK
+05-lock-first run2: A=OK B=OK
+05-lock-first run3: A=OK B=OK
+06-update-first run1: A=OK B=OK
+06-update-first run2: A=OK B=OK
+06-update-first run3: A=OK B=OK
+07-no-counter run1: A=OK B=OK
+07-no-counter run2: A=OK B=OK
+07-no-counter run3: A=OK B=OK
+08-separate-counter run1: A=OK B=OK
+08-separate-counter run2: A=OK B=OK
+08-separate-counter run3: A=OK B=OK
